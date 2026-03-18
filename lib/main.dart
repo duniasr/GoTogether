@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // Tu archivo "mágico"
+import 'firebase_options.dart';
+import 'screens/login_screen.dart'; // Conectamos con tu carpeta screens
 
 void main() async {
-  // 1. Asegura que Flutter esté listo
+  // Nos aseguramos de que Flutter esté listo antes de arrancar Firebase
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 2. Enciende la conexión con Firebase
+  
+  // Inicializamos Firebase con tu configuración mágica
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  runApp(const MyApp());
+}
 
-  runApp(const MaterialApp(
-    home: Scaffold(
-      body: Center(
-        child: Text('GoTogether: ¡Firebase conectado con éxito! '),
-      ),
-    ),
-  ));
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'GoTogether',
+      home: LoginScreen(), // Le decimos que la primera pantalla es tu Login
+    );
+  }
 }
