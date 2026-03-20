@@ -147,6 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       UserCredential user = await FirebaseAuth.instance.createUserWithEmailAndPassword(
                         email: email, password: password
                       );
+                      await user.user!.sendEmailVerification(); // Enviamos el email de verificación
+                      print("✅ ¡USUARIO REGISTRADO! Verificación enviada a $email");
+                      
 
                       Map<String, dynamic> userData = {
                         'nombre': _nameController.text.trim(), // ¡Aquí guardamos el nombre!
