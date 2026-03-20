@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'screens/login_screen.dart'; // Conectamos con tu carpeta screens
+import 'app_theme.dart';
+import 'screens/login_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() async {
-  // Nos aseguramos de que Flutter esté listo antes de arrancar Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Inicializamos Firebase con tu configuración mágica
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -20,10 +17,22 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
+    return MaterialApp(
       title: 'GoTogether',
-      home: LoginScreen(), // Le decimos que la primera pantalla es tu Login
+      theme: AppTheme.theme, // ← aquí se aplican los estilos
+      debugShowCheckedModeBanner: false,
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          // Si hay sesión activa → HomeScreen, si no → LoginScreen
+          return snapshot.hasData ? const HomeScreen() : const LoginScreen();
+        },
+      ),
     );
   }
 }
