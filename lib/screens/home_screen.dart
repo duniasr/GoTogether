@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../app_theme.dart';
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
+import 'map_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+       body: SafeArea(
         child: _currentIndex == 0
             ? _buildExploreTab()
             : _buildPlaceholderTab(_currentIndex),
