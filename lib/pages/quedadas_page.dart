@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
+import '../theme/app_theme.dart';
 
 class QuedadasPage extends StatefulWidget {
   const QuedadasPage({super.key, QuedadasService? service})
@@ -55,214 +56,285 @@ class _QuedadasPageState extends State<QuedadasPage> {
     String tematicaSeleccionada = _tematicas.first;
     String estadoSeleccionado = _estados.first;
     bool esVerificado = false;
+    bool guardando = false;
 
-    await showDialog<void>(
+    await showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text('Nuevo evento'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: tituloController,
-                      decoration: const InputDecoration(
-                        labelText: 'Título',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: descripcionController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Descripción',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: organizadorController,
-                      decoration: const InputDecoration(
-                        labelText: 'Organizador',
-                        hintText: 'Si lo dejas vacío se usará tu usuario actual',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: tematicaSeleccionada,
-                      decoration: const InputDecoration(
-                        labelText: 'Temática',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: _tematicas
-                          .map(
-                            (tematica) => DropdownMenuItem<String>(
-                              value: tematica,
-                              child: Text(tematica),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-
-                        setStateDialog(() {
-                          tematicaSeleccionada = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      initialValue: estadoSeleccionado,
-                      decoration: const InputDecoration(
-                        labelText: 'Estado',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: _estados
-                          .map(
-                            (estado) => DropdownMenuItem<String>(
-                              value: estado,
-                              child: Text(_capitalizar(estado)),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-
-                        setStateDialog(() {
-                          estadoSeleccionado = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: cupoController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Cupo máximo',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: latitudController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Latitud',
-                        hintText: 'Ejemplo: 40.4168',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: longitudController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                        signed: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Longitud',
-                        hintText: 'Ejemplo: -3.7038',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Evento verificado'),
-                      value: esVerificado,
-                      onChanged: (value) {
-                        setStateDialog(() {
-                          esVerificado = value;
-                        });
-                      },
-                    ),
-                  ],
-                ),
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+                top: AppSpacing.md,
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancelar'),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
                 ),
-                FilledButton(
-                  onPressed: () async {
-                    final titulo = tituloController.text.trim();
-                    final descripcion = descripcionController.text.trim();
-                    final organizador = organizadorController.text.trim();
-                    final cupoMax = int.tryParse(cupoController.text.trim());
-                    final latitud =
-                        double.tryParse(latitudController.text.trim().replaceAll(',', '.'));
-                    final longitud =
-                        double.tryParse(longitudController.text.trim().replaceAll(',', '.'));
-
-                    final ubicacionValida =
-                        latitud != null && longitud != null && latitud >= -90 && latitud <= 90 && longitud >= -180 && longitud <= 180;
-
-                    if (titulo.isEmpty ||
-                        descripcion.isEmpty ||
-                        cupoMax == null ||
-                        cupoMax <= 0 ||
-                        !ubicacionValida) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Rellena título, descripción, cupo válido y una ubicación correcta.',
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: AppColors.textHint.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                         ),
-                      );
-                      return;
-                    }
-
-                    try {
-                      await _service.crearQuedada(
-                        titulo: titulo,
-                        descripcion: descripcion,
-                        organizador: organizador,
-                        tematica: tematicaSeleccionada,
-                        cupoMax: cupoMax,
-                        latitud: latitud!,
-                        longitud: longitud!,
-                        estado: estadoSeleccionado,
-                        esVerificado: esVerificado,
-                      );
-
-                      if (!context.mounted) {
-                        return;
-                      }
-
-                      Navigator.of(context).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Evento creado correctamente.'),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        'Crear evento',
+                        style: Theme.of(context).textTheme.displayMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Completa los datos para publicar una nueva quedada universitaria.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      TextField(
+                        controller: tituloController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Título',
+                          hintText: 'Ejemplo: Partido de pádel',
+                          prefixIcon: Icon(Icons.title_rounded),
                         ),
-                      );
-                    } catch (e) {
-                      if (!context.mounted) {
-                        return;
-                      }
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al crear el evento: $e'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: descripcionController,
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          labelText: 'Descripción',
+                          hintText: 'Cuéntanos qué vais a hacer',
+                          prefixIcon: Icon(Icons.notes_rounded),
                         ),
-                      );
-                    }
-                  },
-                  child: const Text('Guardar'),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: organizadorController,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(
+                          labelText: 'Organizador',
+                          hintText: 'Si lo dejas vacío se usa tu usuario actual',
+                          prefixIcon: Icon(Icons.person_outline_rounded),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        'Temática',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: _tematicas
+                            .map(
+                              (tematica) => CategoryChip(
+                                category: tematica,
+                                selected: tematica == tematicaSeleccionada,
+                                onTap: () {
+                                  setModalState(() {
+                                    tematicaSeleccionada = tematica;
+                                  });
+                                },
+                              ),
+                            )
+                            .toList(growable: false),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      DropdownButtonFormField<String>(
+                        value: estadoSeleccionado,
+                        decoration: const InputDecoration(
+                          labelText: 'Estado',
+                          prefixIcon: Icon(Icons.flag_outlined),
+                        ),
+                        items: _estados
+                            .map(
+                              (estado) => DropdownMenuItem<String>(
+                                value: estado,
+                                child: Text(_capitalizar(estado)),
+                              ),
+                            )
+                            .toList(growable: false),
+                        onChanged: (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setModalState(() {
+                            estadoSeleccionado = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextField(
+                        controller: cupoController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Cupo máximo',
+                          hintText: 'Ejemplo: 12',
+                          prefixIcon: Icon(Icons.groups_2_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: latitudController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                                signed: true,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Latitud',
+                                hintText: '40.4168',
+                                prefixIcon: Icon(Icons.place_outlined),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: TextField(
+                              controller: longitudController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
+                                signed: true,
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Longitud',
+                                hintText: '-3.7038',
+                                prefixIcon: Icon(Icons.explore_outlined),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
+                        ),
+                        child: SwitchListTile.adaptive(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          title: Text(
+                            'Evento verificado',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          subtitle: Text(
+                            'Marca esta opción si es un plan validado por la organización.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          value: esVerificado,
+                          onChanged: (value) {
+                            setModalState(() {
+                              esVerificado = value;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed:
+                                  guardando ? null : () => Navigator.of(context).pop(),
+                              child: const Text('Cancelar'),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            flex: 2,
+                            child: AppPrimaryButton(
+                              label: 'Publicar evento',
+                              icon: Icons.add_circle_outline_rounded,
+                              isLoading: guardando,
+                              onPressed: () async {
+                                final titulo = tituloController.text.trim();
+                                final descripcion = descripcionController.text.trim();
+                                final organizador = organizadorController.text.trim();
+                                final cupoMax = int.tryParse(cupoController.text.trim());
+                                final latitud = double.tryParse(
+                                  latitudController.text.trim().replaceAll(',', '.'),
+                                );
+                                final longitud = double.tryParse(
+                                  longitudController.text.trim().replaceAll(',', '.'),
+                                );
+
+                                final ubicacionValida =
+                                    latitud != null &&
+                                    longitud != null &&
+                                    latitud >= -90 &&
+                                    latitud <= 90 &&
+                                    longitud >= -180 &&
+                                    longitud <= 180;
+
+                                if (titulo.isEmpty ||
+                                    descripcion.isEmpty ||
+                                    cupoMax == null ||
+                                    cupoMax <= 0 ||
+                                    !ubicacionValida) {
+                                  _mostrarMensaje(
+                                    'Rellena título, descripción, cupo válido y una ubicación correcta.',
+                                  );
+                                  return;
+                                }
+
+                                setModalState(() {
+                                  guardando = true;
+                                });
+
+                                try {
+                                  await _service.crearQuedada(
+                                    titulo: titulo,
+                                    descripcion: descripcion,
+                                    organizador: organizador,
+                                    tematica: tematicaSeleccionada,
+                                    cupoMax: cupoMax,
+                                    latitud: latitud!,
+                                    longitud: longitud!,
+                                    estado: estadoSeleccionado,
+                                    esVerificado: esVerificado,
+                                  );
+
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  Navigator.of(context).pop();
+                                  _mostrarMensaje('Evento creado correctamente.');
+                                } catch (error) {
+                                  setModalState(() {
+                                    guardando = false;
+                                  });
+                                  _mostrarMensaje('Error al crear el evento: $error');
+                                }
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ],
+              ),
             );
           },
         );
@@ -281,14 +353,23 @@ class _QuedadasPageState extends State<QuedadasPage> {
     final confirmar = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Eliminar evento'),
-            content: Text('¿Seguro que quieres eliminar "${quedada.titulo}"?'),
+            title: Text(
+              'Eliminar evento',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            content: Text(
+              '¿Seguro que quieres eliminar "${quedada.titulo}"?',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 child: const Text('Cancelar'),
               ),
-              FilledButton(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                ),
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('Eliminar'),
               ),
@@ -303,21 +384,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
 
     try {
       await _service.eliminarQuedada(quedada.id);
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evento eliminado.')),
-      );
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al eliminar el evento: $e')),
-      );
+      _mostrarMensaje('Evento eliminado.');
+    } catch (error) {
+      _mostrarMensaje('Error al eliminar el evento: $error');
     }
   }
 
@@ -325,119 +394,373 @@ class _QuedadasPageState extends State<QuedadasPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Eventos'),
+        title: const Text('GoTogether'),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _mostrarFormularioCrearQuedada,
-        icon: const Icon(Icons.add),
-        label: const Text('Nuevo'),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Nuevo evento'),
       ),
-      body: StreamBuilder<List<Quedada>>(
-        stream: _service.escucharQuedadas(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text('Error cargando los eventos: ${snapshot.error}'),
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            );
-          }
-
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final quedadas = snapshot.data ?? const <Quedada>[];
-
-          if (quedadas.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Todavía no hay eventos creados. Pulsa en "Nuevo" para añadir el primero.',
-                  textAlign: TextAlign.center,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Planes universitarios con estilo',
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        color: Colors.white,
+                      ),
                 ),
-              ),
-            );
-          }
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Crea, organiza y gestiona eventos sociales desde una única pantalla.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.white.withOpacity(0.92),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<Quedada>>(
+              stream: _service.escucharQuedadas(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Text(
+                        'Error cargando los eventos: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                    ),
+                  );
+                }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: quedadas.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final quedada = quedadas[index];
-              return Card(
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  title: Text(quedada.titulo.isEmpty ? 'Sin título' : quedada.titulo),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final quedadas = snapshot.data ?? const <Quedada>[];
+
+                if (quedadas.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: AppCard(
+                        padding: const EdgeInsets.all(AppSpacing.xl),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Chip(
-                              label: Text(quedada.tematica),
-                              visualDensity: VisualDensity.compact,
+                            Container(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.full),
+                              ),
+                              child: const Icon(
+                                Icons.event_available_rounded,
+                                color: AppColors.primary,
+                                size: 32,
+                              ),
                             ),
-                            Chip(
-                              label: Text('Estado: ${_capitalizar(quedada.estado)}'),
-                              visualDensity: VisualDensity.compact,
+                            const SizedBox(height: AppSpacing.md),
+                            Text(
+                              'Todavía no hay eventos',
+                              style: Theme.of(context).textTheme.headlineMedium,
                             ),
-                            Chip(
-                              label: Text('Cupo: ${quedada.cupoMax}'),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            Chip(
-                              label: Text('Libres: ${quedada.plazasLibres}'),
-                              visualDensity: VisualDensity.compact,
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              'Pulsa en “Nuevo evento” para crear el primero.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(quedada.descripcion.isEmpty
-                            ? 'Sin descripción'
-                            : quedada.descripcion),
-                        const SizedBox(height: 8),
-                        Text('Organizador: ${quedada.organizador}'),
-                        const SizedBox(height: 4),
-                        Text('Verificado: ${quedada.esVerificado ? 'Sí' : 'No'}'),
-                        const SizedBox(height: 4),
-                        Text('Reportes: ${quedada.contadorReportes}'),
-                        const SizedBox(height: 4),
-                        Text('Asistentes: ${quedada.asistentesId.length}'),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Ubicación: ${quedada.ubicacion.latitude.toStringAsFixed(5)}, '
-                          '${quedada.ubicacion.longitude.toStringAsFixed(5)}',
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
-                    tooltip: 'Eliminar evento',
-                    onPressed: () => _eliminarQuedada(quedada),
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                  );
+                }
+
+                return ListView.separated(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  itemCount: quedadas.length,
+                  separatorBuilder: (_, __) =>
+                      const SizedBox(height: AppSpacing.md),
+                  itemBuilder: (context, index) {
+                    final quedada = quedadas[index];
+                    final categoryColor =
+                        AppColors.categoryColors[quedada.tematica] ??
+                            AppColors.textSecondary;
+
+                    return AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      quedada.titulo.isEmpty
+                                          ? 'Sin título'
+                                          : quedada.titulo,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium,
+                                    ),
+                                    const SizedBox(height: AppSpacing.sm),
+                                    Wrap(
+                                      spacing: AppSpacing.sm,
+                                      runSpacing: AppSpacing.sm,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: AppSpacing.md,
+                                            vertical: AppSpacing.xs + 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: categoryColor.withOpacity(0.12),
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.full,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            quedada.tematica,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelSmall
+                                                ?.copyWith(color: categoryColor),
+                                          ),
+                                        ),
+                                        _InfoPill(
+                                          icon: Icons.flag_outlined,
+                                          text: _capitalizar(quedada.estado),
+                                        ),
+                                        if (quedada.esVerificado)
+                                          const _InfoPill(
+                                            icon: Icons.verified_rounded,
+                                            text: 'Verificado',
+                                            color: AppColors.success,
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                tooltip: 'Eliminar evento',
+                                onPressed: () => _eliminarQuedada(quedada),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: AppColors.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            quedada.descripcion.isEmpty
+                                ? 'Sin descripción disponible.'
+                                : quedada.descripcion,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          Wrap(
+                            spacing: AppSpacing.md,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              _DetailItem(
+                                icon: Icons.person_outline_rounded,
+                                label: 'Organizador',
+                                value: quedada.organizador,
+                              ),
+                              _DetailItem(
+                                icon: Icons.group_outlined,
+                                label: 'Plazas',
+                                value:
+                                    '${quedada.plazasLibres}/${quedada.cupoMax} libres',
+                              ),
+                              _DetailItem(
+                                icon: Icons.people_alt_outlined,
+                                label: 'Asistentes',
+                                value: '${quedada.asistentesActuales}',
+                              ),
+                              _DetailItem(
+                                icon: Icons.location_on_outlined,
+                                label: 'Ubicación',
+                                value:
+                                    '${quedada.ubicacion.latitude.toStringAsFixed(4)}, ${quedada.ubicacion.longitude.toStringAsFixed(4)}',
+                              ),
+                            ],
+                          ),
+                          if (quedada.contadorReportes > 0) ...[
+                            const SizedBox(height: AppSpacing.md),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                                vertical: AppSpacing.sm,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withOpacity(0.12),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.md),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.report_gmailerrorred_rounded,
+                                    color: AppColors.warning,
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Text(
+                                      '${quedada.contadorReportes} reportes registrados',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: AppColors.warning,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _mostrarMensaje(String texto) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(texto)));
   }
 
   static String _capitalizar(String valor) {
     if (valor.isEmpty) {
       return valor;
     }
-
     return valor[0].toUpperCase() + valor.substring(1);
+  }
+}
+
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({
+    required this.icon,
+    required this.text,
+    this.color = AppColors.primary,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs + 2,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(AppRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            text,
+            style: Theme.of(context)
+                .textTheme
+                .labelSmall
+                ?.copyWith(color: color, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailItem extends StatelessWidget {
+  const _DetailItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpacing.sm),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

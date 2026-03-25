@@ -1,12 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../app_theme.dart';
+import 'package:flutter/material.dart';
 
-// ─────────────────────────────────────────────
-//  HomeScreen — Pantalla principal del MVP
-//  Muestra: saludo, categorías, lista de
-//  quedadas cercanas y FAB para crear plan.
-// ─────────────────────────────────────────────
+import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,8 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'Todos';
   int _currentIndex = 0;
 
-  // Categorías del filtro superior
-  final List<String> _categories = [
+  final List<String> _categories = const [
     'Todos',
     'Fiesta',
     'Deporte',
@@ -29,8 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
     'Aire libre',
   ];
 
-  // ── Datos de prueba (luego vendrán de Firestore) ──
-  final List<Map<String, dynamic>> _mockEvents = [
+  final List<Map<String, dynamic>> _mockEvents = const [
     {
       'id': '1',
       'title': 'Fútbol en la playa de Las Canteras',
@@ -83,7 +76,6 @@ class _HomeScreenState extends State<HomeScreen> {
     },
   ];
 
-  // Nombre del usuario actual (simplificado)
   String get _userName {
     final user = FirebaseAuth.instance.currentUser;
     if (user?.displayName != null && user!.displayName!.isNotEmpty) {
@@ -92,12 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'viajero';
   }
 
-  // Filtra los eventos según la categoría seleccionada
   List<Map<String, dynamic>> get _filteredEvents {
-    if (_selectedCategory == 'Todos') return _mockEvents;
+    if (_selectedCategory == 'Todos') {
+      return _mockEvents;
+    }
+
     return _mockEvents
-        .where((e) => e['category'] == _selectedCategory)
-        .toList();
+        .where((event) => event['category'] == _selectedCategory)
+        .toList(growable: false);
   }
 
   @override
@@ -109,7 +103,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ? _buildExploreTab()
             : _buildPlaceholderTab(_currentIndex),
       ),
-      // ── FAB: Crear quedada ──
       floatingActionButton: _currentIndex == 0
           ? Container(
               decoration: BoxDecoration(
@@ -132,25 +125,15 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
-      // ── Bottom Navigation ──
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  // ────────────────────────────────────────────
-  //  TAB: Explorar
-  // ────────────────────────────────────────────
   Widget _buildExploreTab() {
     return CustomScrollView(
       slivers: [
-        // Header
         SliverToBoxAdapter(child: _buildHeader()),
-
-        // Chips de categoría
         SliverToBoxAdapter(child: _buildCategoryFilter()),
-
-        // Título sección
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.symmetric(
@@ -174,8 +157,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-
-        // Lista de eventos
         _filteredEvents.isEmpty
             ? SliverToBoxAdapter(child: _buildEmptyState())
             : SliverPadding(
@@ -183,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   AppSpacing.md,
                   0,
                   AppSpacing.md,
-                  100, // espacio para el FAB
+                  100,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
@@ -199,7 +180,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Header con saludo y botón de perfil ──
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -218,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   '¡Hola, $_userName! 👋',
                   style: AppTextStyles.displayMedium,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   '¿Qué plan te apetece hoy?',
                   style: AppTextStyles.bodyMedium,
@@ -226,7 +206,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          // Avatar / perfil
           GestureDetector(
             onTap: _onProfileTap,
             child: Container(
@@ -252,7 +231,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Chips de filtro horizontal ──
   Widget _buildCategoryFilter() {
     return SizedBox(
       height: 40,
@@ -262,10 +240,10 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: _categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, index) {
-          final cat = _categories[index];
-          final isSelected = _selectedCategory == cat;
+          final category = _categories[index];
+          final isSelected = _selectedCategory == category;
 
-          if (cat == 'Todos') {
+          if (category == 'Todos') {
             return GestureDetector(
               onTap: () => setState(() => _selectedCategory = 'Todos'),
               child: AnimatedContainer(
@@ -290,34 +268,30 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           return CategoryChip(
-            category: cat,
+            category: category,
             selected: isSelected,
-            onTap: () => setState(() => _selectedCategory = cat),
+            onTap: () => setState(() => _selectedCategory = category),
           );
         },
       ),
     );
   }
 
-  // ── Tarjeta de evento ──
   Widget _buildEventCard(Map<String, dynamic> event) {
-    final int spots = event['spots'] as int;
-    final int maxSpots = event['maxSpots'] as int;
-    final double fillRatio = (maxSpots - spots) / maxSpots;
-    final bool almostFull = spots <= 2;
-    final bool isVerified = event['isVerified'] as bool;
-    final Color catColor =
+    final spots = event['spots'] as int;
+    final maxSpots = event['maxSpots'] as int;
+    final fillRatio = (maxSpots - spots) / maxSpots;
+    final almostFull = spots <= 2;
+    final isVerified = event['isVerified'] as bool;
+    final categoryColor =
         AppColors.categoryColors[event['category']] ?? AppColors.textSecondary;
 
     return AppCard(
-      onTap: () {
-        /* TODO: Navegar al detalle del evento */
-      },
+      onTap: () {},
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fila superior: categoría + badge verificado
           Row(
             children: [
               CategoryChip(category: event['category'] as String),
@@ -353,15 +327,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
             ],
           ),
-
           const SizedBox(height: AppSpacing.sm + 2),
-
-          // Título
           Text(event['title'] as String, style: AppTextStyles.headlineSmall),
-
           const SizedBox(height: AppSpacing.sm),
-
-          // Lugar y hora
           Row(
             children: [
               const Icon(
@@ -369,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 14,
                 color: AppColors.textHint,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
                   event['location'] as String,
@@ -383,14 +351,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 14,
                 color: AppColors.textHint,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSpacing.xs),
               Text(event['time'] as String, style: AppTextStyles.bodyMedium),
             ],
           ),
-
           const SizedBox(height: AppSpacing.md),
-
-          // Barra de aforo
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -400,12 +365,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     almostFull ? '🔥 ¡Casi lleno!' : '$spots plazas libres',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: almostFull
-                          ? AppColors.error
-                          : AppColors.textSecondary,
-                      fontWeight: almostFull
-                          ? FontWeight.w700
-                          : FontWeight.w500,
+                      color:
+                          almostFull ? AppColors.error : AppColors.textSecondary,
+                      fontWeight:
+                          almostFull ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   Text('$maxSpots máx.', style: AppTextStyles.labelSmall),
@@ -418,23 +381,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: fillRatio,
                   minHeight: 6,
                   backgroundColor: AppColors.surfaceAlt,
-                  color: almostFull ? AppColors.error : catColor,
+                  color: almostFull ? AppColors.error : categoryColor,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: AppSpacing.md),
-
-          // Botón de unirse
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: spots > 0
-                  ? () {
-                      /* TODO: HU-11 Inscripción */
-                    }
-                  : null,
+              onPressed: spots > 0 ? () {} : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 disabledBackgroundColor: AppColors.surfaceAlt,
@@ -457,7 +413,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Estado vacío ──
   Widget _buildEmptyState() {
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -490,14 +445,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Placeholder para las otras pestañas ──
   Widget _buildPlaceholderTab(int index) {
-    final data = [
+    final data = const [
       {'icon': Icons.map_rounded, 'label': 'Mapa'},
       {'icon': Icons.event_note_rounded, 'label': 'Mis planes'},
       {'icon': Icons.person_rounded, 'label': 'Perfil'},
     ];
+
     final item = data[index - 1];
+
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -515,7 +471,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Bottom Navigation Bar ──
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -570,24 +525,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Handlers ──
   void _onCreateEvent() {
-    // TODO: HU-06 Navegar al formulario de crear quedada
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Crear plan — próximamente'),
-        backgroundColor: AppColors.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-      ),
+      const SnackBar(content: Text('Crear plan — próximamente')),
     );
   }
 
   void _onProfileTap() {
-    // TODO: Navegar al perfil / ajustes (con opción de cerrar sesión)
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
@@ -604,7 +549,6 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
           Center(
             child: Container(
               width: 40,
@@ -625,7 +569,6 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppSpacing.lg),
           const Divider(),
           const SizedBox(height: AppSpacing.md),
-          // Cerrar sesión
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(

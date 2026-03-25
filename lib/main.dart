@@ -1,26 +1,29 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firebase_options.dart';
-import 'app_theme.dart';
-import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
-void main() async {
+import 'firebase_options.dart';
+import 'pages/login_screen.dart';
+import 'pages/quedadas_page.dart';
+import 'theme/app_theme.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(const MyApp());
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  runApp(const GoTogetherApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class GoTogetherApp extends StatelessWidget {
+  const GoTogetherApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GoTogether',
-      theme: AppTheme.theme, // ← aquí se aplican los estilos
       debugShowCheckedModeBanner: false,
+      title: 'GoTogether',
+      theme: AppTheme.theme,
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
@@ -29,8 +32,12 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          // Si hay sesión activa → HomeScreen, si no → LoginScreen
-          return snapshot.hasData ? const HomeScreen() : const LoginScreen();
+
+          if (snapshot.hasData) {
+            return const QuedadasPage();
+          }
+
+          return const LoginScreen();
         },
       ),
     );

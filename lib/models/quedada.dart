@@ -29,6 +29,8 @@ class Quedada {
   final String titulo;
   final GeoPoint ubicacion;
 
+  int get asistentesActuales => asistentesId.length;
+
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final asistentesRaw = data['asistentesID'];
