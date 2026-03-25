@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,11 @@ class MyApp extends StatelessWidget {
       title: 'GoTogether',
       theme: AppTheme.theme, // ← aquí se aplican los estilos
       debugShowCheckedModeBanner: false,
+
+      routes: {
+        '/profile': (context) => const ProfileScreen(),
+      },
+
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
