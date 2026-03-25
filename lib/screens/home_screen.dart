@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../app_theme.dart';
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -622,7 +623,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPlaceholderTab(int index) {
-    return const SizedBox.shrink();
+    // Si el usuario toca el índice 3 (la 4ª pestaña, "Perfil")
+    if (index == 3) {
+      return const ProfileScreen(); // ¡Llamamos a tu pantalla!
+    }
+
+    // Para Mapa (1) y Mis planes (2), mostramos un texto de aviso
+    return Center(
+      child: Text(
+        'Próximamente...',
+        style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textHint),
+      ),
+    );
   }
 
   Widget _buildBottomNav() {
