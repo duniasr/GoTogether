@@ -170,6 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                   } catch (e) {
                     print("❌ ERROR: $e");
+                    await FirebaseAuth.instance.signOut();
                   }
                 },
                 child: Text(_isLogin ? "Iniciar Sesión" : "Registrarse", style: const TextStyle(fontSize: 18, color: Colors.white)),
