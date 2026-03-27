@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/quedadas_service.dart';
 import 'profile_screen.dart';
-// import 'map_screen.dart'; // Will be used when implemented
+import 'map_screen.dart'; 
 import 'home/widgets/explore_tab.dart';
 import 'home/widgets/create_event_dialog.dart';
 
@@ -41,7 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
                 categories: _categories,
               )
-            : _buildPlaceholderTab(_currentIndex),
+            : _currentIndex == 1
+                ? const MapScreen()
+                : _buildPlaceholderTab(_currentIndex),
       ),
       floatingActionButton: _currentIndex == 0
           ? Container(
@@ -75,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return const ProfileScreen(); // ¡Llamamos a tu pantalla!
     }
 
-    // Para Mapa (1) y Mis planes (2), mostramos un texto de aviso
+    // Para Mis planes (2), mostramos un texto de aviso
     return Center(
       child: Text(
         'Próximamente...',
