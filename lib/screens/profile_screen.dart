@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+// TODO: Cambia esta ruta por la ruta real de tu archivo de estilos
 import '../app_theme.dart'; 
-import 'profile/widgets/delete_account_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,13 +17,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isSaveEnabled = false;
+  bool _isLoading = false; 
 
   @override
   void initState() {
     super.initState();
-    final user = FirebaseAuth.instance.currentUser;
-    _nameController.text = user?.displayName ?? "Usuario Estudiante"; 
-    _emailController.text = user?.email ?? "usuario@correo.com";
+    // Ponemos el email rápido sacándolo de Auth
+    _emailController.text = FirebaseAuth.instance.currentUser?.email ?? "";
+    
+    // Llamamos a Firebase para traer el nombre real guardado en el Registro
+    _cargarDatosUsuario();
 
     _nameController.addListener(_validateForm);
     _emailController.addListener(_validateForm);
@@ -43,12 +47,177 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  // --- NUEVA LÓGICA: Cargar el nombre desde Firestore ---
+  Future<void> _cargarDatosUsuario() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        setState(() {
+          // Buscamos el campo 'nombre' que guardaste en el login
+          _nameController.text = doc.data()?['nombre'] ?? user.displayName ?? "";
+        });
+        _validateForm(); // Re-validamos el botón tras cargar el dato
+      }
+    } catch (e) {
+      debugPrint("Error al cargar perfil: $e");
+    }
+  }
+
+  // --- NUEVA LÓGICA: HU-05 Guardar Cambios ---
+  Future<void> _guardarCambios() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final nuevoNombre = _nameController.text.trim();
+
+      // 1. Guardamos el nuevo nombre en la base de datos (Firestore)
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'nombre': nuevoNombre,
+      });
+
+      // 2. Lo actualizamos en Auth para que HomeScreen pueda decir "¡Hola, [Nombre]!"
+      await user.updateDisplayName(nuevoNombre);
+
+      // 3. (Opcional) Si el usuario escribió una nueva contraseña, la actualizamos
+      if (_passwordController.text.isNotEmpty) {
+        await user.updatePassword(_passwordController.text);
+        _passwordController.clear(); // Limpiamos el campo tras cambiarla
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Perfil actualizado con éxito"),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String mensaje = 'Error al actualizar.';
+        if (e.code == 'requires-recent-login') {
+          mensaje = 'Por seguridad, cierra sesión y vuelve a entrar para cambiar tu contraseña.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error inesperado: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- LÓGICA BACKEND: HU-03 Borrado en cascada ---
+  Future<void> _eliminarCuenta() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final db = FirebaseFirestore.instance;
+      final batch = db.batch(); 
+
+      final quedadasRef = db.collection('quedadas');
+      
+      final queryByUid = await quedadasRef.where('organizador', isEqualTo: user.uid).get();
+      for (var doc in queryByUid.docs) {
+        batch.update(doc.reference, {'estado': 'cancelado'});
+      }
+
+      final queryByEmail = await quedadasRef.where('organizador', isEqualTo: user.email).get();
+      for (var doc in queryByEmail.docs) {
+        batch.update(doc.reference, {'estado': 'cancelado'});
+      }
+
+      final userDoc = db.collection('users').doc(user.uid);
+      batch.delete(userDoc);
+
+      await batch.commit();
+      await user.delete();
+      
+      if (mounted) {
+        Navigator.of(context).pop(); 
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Cuenta y datos eliminados correctamente.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        String mensaje = 'Error al eliminar la cuenta.';
+        if (e.code == 'requires-recent-login') {
+          mensaje = 'Por seguridad, debes cerrar sesión y volver a entrar antes de eliminar tu cuenta.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error inesperado: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _showDeleteConfirmationDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: !_isLoading, 
       builder: (BuildContext context) {
-        return const DeleteAccountDialog();
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          title: const Text("Eliminar cuenta", style: AppTextStyles.headlineMedium),
+          content: const Text(
+            "¿Estás seguro? Esta acción es irreversible.",
+            style: AppTextStyles.bodyLarge,
+          ),
+          actions: [
+            TextButton(
+              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+              child: Text(
+                "Cancelar",
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: _isLoading ? AppColors.textHint : AppColors.textSecondary
+                ),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
+              onPressed: _isLoading ? null : _eliminarCuenta, 
+              child: _isLoading 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text("Aceptar"),
+            ),
+          ],
+        );
       },
     );
   }
@@ -97,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     style: AppTextStyles.bodyLarge,
-                    readOnly: true,
+                    readOnly: true, 
                     decoration: const InputDecoration(
                       labelText: 'Correo electrónico',
                     ),
@@ -120,14 +289,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             AppPrimaryButton(
               label: 'Guardar Cambios',
-              onPressed: _isSaveEnabled ? () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text("Perfil actualizado con éxito"),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              } : null,
+              isLoading: _isLoading, // Muestra indicador de carga al guardar
+              onPressed: _isSaveEnabled && !_isLoading ? _guardarCambios : null,
             ),
 
             const SizedBox(height: AppSpacing.xxl),
@@ -143,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
-                onPressed: _showDeleteConfirmationDialog,
+                onPressed: _isLoading ? null : _showDeleteConfirmationDialog,
                 child: Text('Eliminar cuenta', style: AppTextStyles.button),
               ),
             ),
