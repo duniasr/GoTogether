@@ -17,20 +17,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   bool _isSaveEnabled = false;
-  bool _isLoading = false; // Añadimos estado de carga para no saturar botones
+  bool _isLoading = false; 
 
   @override
   void initState() {
     super.initState();
-    // Cargamos los datos reales del usuario si existen
-    final user = FirebaseAuth.instance.currentUser;
-    _nameController.text = user?.displayName ?? "Usuario Estudiante"; 
-    _emailController.text = user?.email ?? "usuario@correo.com";
+    // Ponemos el email rápido sacándolo de Auth
+    _emailController.text = FirebaseAuth.instance.currentUser?.email ?? "";
+    
+    // Llamamos a Firebase para traer el nombre real guardado en el Registro
+    _cargarDatosUsuario();
 
     _nameController.addListener(_validateForm);
     _emailController.addListener(_validateForm);
-    
-    _validateForm();
   }
 
   @override
@@ -48,6 +47,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  // --- NUEVA LÓGICA: Cargar el nombre desde Firestore ---
+  Future<void> _cargarDatosUsuario() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (doc.exists && mounted) {
+        setState(() {
+          // Buscamos el campo 'nombre' que guardaste en el login
+          _nameController.text = doc.data()?['nombre'] ?? user.displayName ?? "";
+        });
+        _validateForm(); // Re-validamos el botón tras cargar el dato
+      }
+    } catch (e) {
+      debugPrint("Error al cargar perfil: $e");
+    }
+  }
+
+  // --- NUEVA LÓGICA: HU-05 Guardar Cambios ---
+  Future<void> _guardarCambios() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final nuevoNombre = _nameController.text.trim();
+
+      // 1. Guardamos el nuevo nombre en la base de datos (Firestore)
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'nombre': nuevoNombre,
+      });
+
+      // 2. Lo actualizamos en Auth para que HomeScreen pueda decir "¡Hola, [Nombre]!"
+      await user.updateDisplayName(nuevoNombre);
+
+      // 3. (Opcional) Si el usuario escribió una nueva contraseña, la actualizamos
+      if (_passwordController.text.isNotEmpty) {
+        await user.updatePassword(_passwordController.text);
+        _passwordController.clear(); // Limpiamos el campo tras cambiarla
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Perfil actualizado con éxito"),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        String mensaje = 'Error al actualizar.';
+        if (e.code == 'requires-recent-login') {
+          mensaje = 'Por seguridad, cierra sesión y vuelve a entrar para cambiar tu contraseña.';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error inesperado: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   // --- LÓGICA BACKEND: HU-03 Borrado en cascada ---
   Future<void> _eliminarCuenta() async {
     setState(() => _isLoading = true);
@@ -56,10 +126,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user == null) return;
 
       final db = FirebaseFirestore.instance;
-      final batch = db.batch(); // Usamos un batch para ejecutar todo de golpe
+      final batch = db.batch(); 
 
-      // 1. Buscar eventos activos del usuario y marcarlos como "Cancelado"
-      // Nota: Buscamos tanto por UID como por email por seguridad, según cómo los guardéis
       final quedadasRef = db.collection('quedadas');
       
       final queryByUid = await quedadasRef.where('organizador', isEqualTo: user.uid).get();
@@ -72,23 +140,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         batch.update(doc.reference, {'estado': 'cancelado'});
       }
 
-      // 2. Eliminar el documento del usuario en Firestore (si tenéis colección 'users')
       final userDoc = db.collection('users').doc(user.uid);
       batch.delete(userDoc);
 
-      // 3. Ejecutar todos los cambios en la base de datos
       await batch.commit();
-
-      // 4. Eliminar el usuario de Firebase Auth
       await user.delete();
       
-      // Al hacer delete(), el StreamBuilder del main.dart detectará la salida
-      // y mandará al usuario al Login automáticamente, cumpliendo el último criterio.
-
       if (mounted) {
-        Navigator.of(context).pop(); // Cerramos el cuadro de diálogo
-        // El SnackBar puede que no se vea mucho tiempo porque viaja al login rápido, 
-        // pero lo dejamos por consistencia y UX.
+        Navigator.of(context).pop(); 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Cuenta y datos eliminados correctamente.'),
@@ -97,7 +156,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      // Firebase a veces pide re-autenticar por seguridad antes de borrar una cuenta
       if (mounted) {
         Navigator.of(context).pop();
         String mensaje = 'Error al eliminar la cuenta.';
@@ -123,7 +181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showDeleteConfirmationDialog() {
     showDialog(
       context: context,
-      barrierDismissible: !_isLoading, // Evita cerrar si está cargando
+      barrierDismissible: !_isLoading, 
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
@@ -153,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
-              onPressed: _isLoading ? null : _eliminarCuenta, // <-- Llamamos a la lógica
+              onPressed: _isLoading ? null : _eliminarCuenta, 
               child: _isLoading 
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                   : const Text("Aceptar"),
@@ -208,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     style: AppTextStyles.bodyLarge,
-                    readOnly: true, // Hacemos el email de solo lectura temporalmente
+                    readOnly: true, 
                     decoration: const InputDecoration(
                       labelText: 'Correo electrónico',
                     ),
@@ -231,15 +289,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             AppPrimaryButton(
               label: 'Guardar Cambios',
-              onPressed: _isSaveEnabled ? () {
-                // TODO: HU-05 Guardar cambios
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text("Perfil actualizado con éxito"),
-                    backgroundColor: AppColors.success,
-                  ),
-                );
-              } : null,
+              isLoading: _isLoading, // Muestra indicador de carga al guardar
+              onPressed: _isSaveEnabled && !_isLoading ? _guardarCambios : null,
             ),
 
             const SizedBox(height: AppSpacing.xxl),
