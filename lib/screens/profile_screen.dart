@@ -126,31 +126,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user == null) return;
 
       final db = FirebaseFirestore.instance;
-      final batch = db.batch(); 
+      final batch = db.batch();
 
-      final quedadasRef = db.collection('quedadas');
-      
-      final queryByUid = await quedadasRef.where('organizador', isEqualTo: user.uid).get();
-      for (var doc in queryByUid.docs) {
-        batch.update(doc.reference, {'estado': 'cancelado'});
+      // La colección correcta es 'events' (igual que QuedadasService)
+      // El organizador se guarda siempre como uid desde QuedadasService
+      final eventsRef = db.collection('events');
+      final queryByUid = await eventsRef
+          .where('organizador', isEqualTo: user.uid)
+          .get();
+      for (final doc in queryByUid.docs) {
+        batch.delete(doc.reference); // Eliminamos, no actualizamos
       }
 
-      final queryByEmail = await quedadasRef.where('organizador', isEqualTo: user.email).get();
-      for (var doc in queryByEmail.docs) {
-        batch.update(doc.reference, {'estado': 'cancelado'});
-      }
-
-      final userDoc = db.collection('users').doc(user.uid);
-      batch.delete(userDoc);
+      // Eliminamos también el documento del usuario en Firestore
+      batch.delete(db.collection('users').doc(user.uid));
 
       await batch.commit();
-      await user.delete();
-      
+      await user.delete(); // Eliminamos la cuenta de Firebase Auth
+
       if (mounted) {
-        Navigator.of(context).pop(); 
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Cuenta y datos eliminados correctamente.'),
+          const SnackBar(
+            content: Text('Cuenta y datos eliminados correctamente.'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -160,7 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Navigator.of(context).pop();
         String mensaje = 'Error al eliminar la cuenta.';
         if (e.code == 'requires-recent-login') {
-          mensaje = 'Por seguridad, debes cerrar sesión y volver a entrar antes de eliminar tu cuenta.';
+          mensaje = 'Por seguridad, cierra sesión y vuelve a entrar antes de eliminar tu cuenta.';
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),

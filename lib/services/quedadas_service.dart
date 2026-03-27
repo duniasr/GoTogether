@@ -44,7 +44,7 @@ class QuedadasService {
     final usuario = _auth.currentUser;
     final organizadorFinal = organizador.trim().isNotEmpty
         ? organizador.trim()
-        : usuario?.email ?? usuario?.uid ?? 'anonimo';
+        : usuario?.uid ?? 'anonimo';
 
     final evento = Quedada(
       id: '',
