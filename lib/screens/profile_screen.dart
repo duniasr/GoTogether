@@ -26,8 +26,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     _nameController.addListener(_validateForm);
     _emailController.addListener(_validateForm);
-    
-    _validateForm();
   }
 
   @override
