@@ -42,9 +42,28 @@ class QuedadasService {
     required bool esVerificado,
   }) async {
     final usuario = _auth.currentUser;
-    final organizadorFinal = organizador.trim().isNotEmpty
-        ? organizador.trim()
-        : usuario?.uid ?? 'anonimo';
+    String organizadorFinal = organizador.trim();
+
+    // --- LA MAGIA: Si el campo de la pantalla viene vacío, buscamos su NOMBRE real ---
+    if (organizadorFinal.isEmpty) {
+      if (usuario != null) {
+        try {
+          // Buscamos en la colección 'users' a ver si tiene el nombre configurado
+          final userDoc = await _firestore.collection('users').doc(usuario.uid).get();
+          
+          if (userDoc.exists && userDoc.data()?['nombre'] != null && userDoc.data()!['nombre'].toString().trim().isNotEmpty) {
+            organizadorFinal = userDoc.data()!['nombre']; // Encontramos "kiko"
+          } else {
+            // Si no tiene nombre en la base de datos, usamos su displayName de Google o "Anónimo"
+            organizadorFinal = usuario.displayName ?? 'Anónimo';
+          }
+        } catch (e) {
+          organizadorFinal = 'Anónimo';
+        }
+      } else {
+        organizadorFinal = 'Anónimo';
+      }
+    }
 
     final evento = Quedada(
       id: '',
@@ -54,7 +73,7 @@ class QuedadasService {
       descripcion: descripcion.trim(),
       esVerificado: esVerificado,
       estado: estado,
-      organizador: organizadorFinal,
+      organizador: organizadorFinal, // <--- Ahora sí, guardamos "kiko"
       plazasLibres: cupoMax,
       tematica: tematica,
       titulo: titulo.trim(),
