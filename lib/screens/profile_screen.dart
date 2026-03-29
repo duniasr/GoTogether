@@ -14,40 +14,53 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
+  // NUEVO: Controlador para el campo "Sobre mí"
+  final TextEditingController _bioController = TextEditingController();
+  
   bool _isSaveEnabled = false;
   bool _isLoading = false; 
+
+  String? _photoUrl; 
+  
+  final List<String> _avataresDisponibles = [
+    'assets/images/avatars/avatar1.png',
+    'assets/images/avatars/avatar2.png',
+    'assets/images/avatars/avatar3.png',
+    'assets/images/avatars/avatar4.png',
+    'assets/images/avatars/avatar5.png',
+    'assets/images/avatars/avatar6.png',
+    'assets/images/avatars/avatar7.png',
+    'assets/images/avatars/avatar8.png',
+    'assets/images/avatars/avatar9.png',
+    'assets/images/avatars/avatar10.png',
+    'assets/images/avatars/avatar11.png'
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Ponemos el email rápido sacándolo de Auth
     _emailController.text = FirebaseAuth.instance.currentUser?.email ?? "";
-    
-    // Llamamos a Firebase para traer el nombre real guardado en el Registro
     _cargarDatosUsuario();
 
     _nameController.addListener(_validateForm);
-    _emailController.addListener(_validateForm);
+    _bioController.addListener(_validateForm); // Escuchamos si escribes en la biografía
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _passwordController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
   void _validateForm() {
     setState(() {
-      _isSaveEnabled = _nameController.text.trim().isNotEmpty && 
-                       _emailController.text.trim().isNotEmpty;
+      // El botón de guardar se activa siempre que haya un nombre escrito
+      _isSaveEnabled = _nameController.text.trim().isNotEmpty;
     });
   }
 
-  // --- NUEVA LÓGICA: Cargar el nombre desde Firestore ---
   Future<void> _cargarDatosUsuario() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -56,69 +69,374 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists && mounted) {
         setState(() {
-          // Buscamos el campo 'nombre' que guardaste en el login
           _nameController.text = doc.data()?['nombre'] ?? user.displayName ?? "";
+          _emailController.text = doc.data()?['email'] ?? user.email ?? "";
+          _photoUrl = doc.data()?['fotoUrl'] ?? user.photoURL;
+          // NUEVO: Cargamos la biografía desde Firestore (si existe)
+          _bioController.text = doc.data()?['bio'] ?? "";
         });
-        _validateForm(); // Re-validamos el botón tras cargar el dato
+        _validateForm(); 
       }
     } catch (e) {
       debugPrint("Error al cargar perfil: $e");
     }
   }
 
-  // --- NUEVA LÓGICA: HU-05 Guardar Cambios ---
-  Future<void> _guardarCambios() async {
-    setState(() => _isLoading = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+  // --- SELECTOR DE AVATARES ---
+  void _mostrarSelectorAvatar() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      isScrollControlled: true, 
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: AppSpacing.lg,
+            bottom: MediaQuery.of(context).padding.bottom + AppSpacing.lg, 
+          ),
+          child: SingleChildScrollView( 
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Elige tu Avatar', style: AppTextStyles.headlineMedium),
+                const SizedBox(height: AppSpacing.md),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3, 
+                    crossAxisSpacing: AppSpacing.md,
+                    mainAxisSpacing: AppSpacing.md,
+                  ),
+                  itemCount: _avataresDisponibles.length,
+                  itemBuilder: (context, index) {
+                    final avatarPath = _avataresDisponibles[index];
+                    final isSelected = _photoUrl == avatarPath;
 
-      final nuevoNombre = _nameController.text.trim();
-
-      // 1. Guardamos el nuevo nombre en la base de datos (Firestore)
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-        'nombre': nuevoNombre,
-      });
-
-      // 2. Lo actualizamos en Auth para que HomeScreen pueda decir "¡Hola, [Nombre]!"
-      await user.updateDisplayName(nuevoNombre);
-
-      // 3. (Opcional) Si el usuario escribió una nueva contraseña, la actualizamos
-      if (_passwordController.text.isNotEmpty) {
-        await user.updatePassword(_passwordController.text);
-        _passwordController.clear(); // Limpiamos el campo tras cambiarla
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Perfil actualizado con éxito"),
-            backgroundColor: AppColors.success,
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _photoUrl = avatarPath);
+                        _validateForm(); 
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : Colors.transparent,
+                            width: 3,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: AppColors.surfaceAlt,
+                          backgroundImage: AssetImage(avatarPath),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+            ),
           ),
         );
-      }
-    } on FirebaseAuthException catch (e) {
+      },
+    );
+  }
+
+  // --- GUARDADO BÁSICO (Nombre, Avatar y Biografía) ---
+  Future<void> _guardarDatosBasicos() async {
+    setState(() => _isLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      final nuevoNombre = _nameController.text.trim();
+      final nuevaBio = _bioController.text.trim(); // Cogemos el texto de "Sobre mí"
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'nombre': nuevoNombre,
+        'bio': nuevaBio, // NUEVO: Guardamos la biografía en la base de datos
+        if (_photoUrl != null) 'fotoUrl': _photoUrl, 
+      });
+      
+      await user.updateDisplayName(nuevoNombre);
+      if (_photoUrl != null) await user.updatePhotoURL(_photoUrl);
+
+      await FirebaseFirestore.instance.collection('historial_perfiles').add({
+        'userId': user.uid,
+        'fecha': FieldValue.serverTimestamp(),
+        'cambioNombre': nuevoNombre != user.displayName,
+        'cambioFoto': true,
+        'cambioBio': true,
+      });
+
       if (mounted) {
-        String mensaje = 'Error al actualizar.';
-        if (e.code == 'requires-recent-login') {
-          mensaje = 'Por seguridad, cierra sesión y vuelve a entrar para cambiar tu contraseña.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),
+          const SnackBar(content: Text("Perfil actualizado con éxito"), backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error inesperado: $e'), backgroundColor: AppColors.error),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // --- LÓGICA BACKEND: HU-03 Borrado en cascada ---
+  // --- MENSAJE DE ADVERTENCIA UNIVERSAL ---
+  Future<bool> _pedirConfirmacionPeligrosa(String titulo, String mensaje) async {
+    return await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: Text(titulo, style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          content: Text(mensaje, style: AppTextStyles.bodyLarge),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Sí, estoy seguro'),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+  }
+
+  // --- DIÁLOGO INDEPENDIENTE: CAMBIAR CORREO ---
+  Future<void> _mostrarDialogoCambioCorreo() async {
+    final currentPasswordController = TextEditingController();
+    final newEmailController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isChanging = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: const Text("Cambiar Correo", style: AppTextStyles.headlineMedium),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Por seguridad, necesitamos tu contraseña actual para cambiar tu correo.", style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: currentPasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Contraseña Actual'),
+                        validator: (value) => value == null || value.isEmpty ? 'Requerido' : null,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: newEmailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'Nuevo Correo Electrónico'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Requerido';
+                          if (!value.contains('@')) return 'Correo no válido';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isChanging ? null : () => Navigator.of(context).pop(),
+                  child: const Text("Cancelar"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  onPressed: isChanging ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
+
+                    final confirmado = await _pedirConfirmacionPeligrosa(
+                      'Advertencia de Seguridad',
+                      'Estás a punto de cambiar tu correo electrónico. Este cambio es definitivo y lo necesitarás para volver a iniciar sesión. \n\n¿Estás completamente seguro?',
+                    );
+
+                    if (!confirmado) return; 
+
+                    setStateDialog(() => isChanging = true);
+                    try {
+                      final user = FirebaseAuth.instance.currentUser!;
+                      
+                      AuthCredential credential = EmailAuthProvider.credential(
+                        email: user.email!, 
+                        password: currentPasswordController.text
+                      );
+                      await user.reauthenticateWithCredential(credential);
+
+                      final nuevoCorreo = newEmailController.text.trim();
+                      await user.verifyBeforeUpdateEmail(nuevoCorreo);
+
+                      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+                        'email': nuevoCorreo,
+                      });
+
+                      setState(() {
+                        _emailController.text = nuevoCorreo;
+                      });
+
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Revisa la bandeja de entrada de tu nuevo correo para verificarlo.'), backgroundColor: AppColors.success),
+                        );
+                      }
+                    } on FirebaseAuthException catch (e) {
+                      String mensaje = 'Error al cambiar correo.';
+                      if (e.code == 'wrong-password' || e.code == 'invalid-credential') mensaje = 'La contraseña es incorrecta.';
+                      if (e.code == 'email-already-in-use') mensaje = 'Ese correo ya está registrado.';
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje), backgroundColor: Colors.red));
+                    } finally {
+                      setStateDialog(() => isChanging = false);
+                    }
+                  },
+                  child: isChanging 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                      : const Text("Guardar"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- DIÁLOGO INDEPENDIENTE: CAMBIAR CONTRASEÑA ---
+  Future<void> _mostrarDialogoCambioPassword() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool isChanging = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: const Text("Cambiar Contraseña", style: AppTextStyles.headlineMedium),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: currentPasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Contraseña Actual'),
+                        validator: (value) => value == null || value.isEmpty ? 'Requerido' : null,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: newPasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Nueva Contraseña'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Requerido';
+                          if (value.length < 6) return 'Mínimo 6 caracteres';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: confirmPasswordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(labelText: 'Confirmar Nueva Contraseña'),
+                        validator: (value) {
+                          if (value != newPasswordController.text) return 'Las contraseñas no coinciden';
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isChanging ? null : () => Navigator.of(context).pop(),
+                  child: const Text("Cancelar"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  onPressed: isChanging ? null : () async {
+                    if (!formKey.currentState!.validate()) return;
+
+                    final confirmado = await _pedirConfirmacionPeligrosa(
+                      'Advertencia de Seguridad',
+                      'Vas a cambiar tu contraseña de acceso. ¿Estás seguro de que quieres continuar con este cambio irreversible?',
+                    );
+
+                    if (!confirmado) return; 
+
+                    setStateDialog(() => isChanging = true);
+                    try {
+                      final user = FirebaseAuth.instance.currentUser!;
+                      
+                      AuthCredential credential = EmailAuthProvider.credential(
+                        email: user.email!, 
+                        password: currentPasswordController.text
+                      );
+                      await user.reauthenticateWithCredential(credential);
+                      await user.updatePassword(newPasswordController.text);
+
+                      await FirebaseFirestore.instance.collection('historial_perfiles').add({
+                        'userId': user.uid,
+                        'fecha': FieldValue.serverTimestamp(),
+                        'cambioPassword': true,
+                      });
+
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Contraseña cambiada con éxito.'), backgroundColor: AppColors.success),
+                        );
+                      }
+                    } on FirebaseAuthException catch (e) {
+                      String mensaje = 'Error al cambiar contraseña.';
+                      if (e.code == 'wrong-password' || e.code == 'invalid-credential') mensaje = 'La contraseña actual es incorrecta.';
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje), backgroundColor: Colors.red));
+                    } finally {
+                      setStateDialog(() => isChanging = false);
+                    }
+                  },
+                  child: isChanging 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                      : const Text("Cambiar"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // --- LÓGICA DE BORRADO DE CUENTA ---
   Future<void> _eliminarCuenta() async {
     setState(() => _isLoading = true);
     try {
@@ -126,50 +444,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (user == null) return;
 
       final db = FirebaseFirestore.instance;
-      final batch = db.batch();
-
-      // La colección correcta es 'events' (igual que QuedadasService)
-      // El organizador se guarda siempre como uid desde QuedadasService
       final eventsRef = db.collection('events');
-      final queryByUid = await eventsRef
-          .where('organizador', isEqualTo: user.uid)
-          .get();
+      
+      final queryByUid = await eventsRef.where('organizador', isEqualTo: user.uid).get();
       for (final doc in queryByUid.docs) {
-        batch.delete(doc.reference); // Eliminamos, no actualizamos
+        await doc.reference.delete();
       }
 
-      // Eliminamos también el documento del usuario en Firestore
-      batch.delete(db.collection('users').doc(user.uid));
+      try { await db.collection('users').doc(user.uid).delete(); } catch (e) {}
 
-      await batch.commit();
-      await user.delete(); // Eliminamos la cuenta de Firebase Auth
+      await user.delete(); 
 
       if (mounted) {
         Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cuenta y datos eliminados correctamente.'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cuenta eliminada.'), backgroundColor: AppColors.error));
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         Navigator.of(context).pop();
-        String mensaje = 'Error al eliminar la cuenta.';
-        if (e.code == 'requires-recent-login') {
-          mensaje = 'Por seguridad, cierra sesión y vuelve a entrar antes de eliminar tu cuenta.';
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensaje), backgroundColor: AppColors.error),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error inesperado: $e'), backgroundColor: AppColors.error),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes volver a iniciar sesión para borrar la cuenta.'), backgroundColor: AppColors.error));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -183,36 +476,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
           title: const Text("Eliminar cuenta", style: AppTextStyles.headlineMedium),
-          content: const Text(
-            "¿Estás seguro? Esta acción es irreversible.",
-            style: AppTextStyles.bodyLarge,
-          ),
+          content: const Text("¿Estás seguro? Esta acción es irreversible.", style: AppTextStyles.bodyLarge),
           actions: [
-            TextButton(
-              onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
-              child: Text(
-                "Cancelar",
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: _isLoading ? AppColors.textHint : AppColors.textSecondary
-                ),
-              ),
-            ),
+            TextButton(onPressed: _isLoading ? null : () => Navigator.of(context).pop(), child: const Text("Cancelar")),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               onPressed: _isLoading ? null : _eliminarCuenta, 
-              child: _isLoading 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text("Aceptar"),
+              child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Aceptar"),
             ),
           ],
         );
@@ -228,24 +499,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.surface,
         title: const Text('Mi Perfil', style: AppTextStyles.headlineMedium),
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const CircleAvatar(
-              radius: 60,
-              backgroundColor: AppColors.primaryLight,
-              child: Icon(Icons.person, size: 60, color: AppColors.primary),
+            GestureDetector(
+              onTap: _mostrarSelectorAvatar, 
+              child: Stack(
+                alignment: Alignment.bottomRight, 
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: AppColors.primaryLight,
+                    backgroundImage: _photoUrl != null && _photoUrl!.isNotEmpty 
+                        ? AssetImage(_photoUrl!) 
+                        : null,
+                    
+                    child: _photoUrl == null || _photoUrl!.isEmpty
+                        ? const Icon(Icons.person, size: 60, color: AppColors.primary)
+                        : null,
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.md),
-            Text(
-              "Toca para cambiar la foto", 
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
-            ),
-            
+            Text("Toca para elegir avatar", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
             const SizedBox(height: AppSpacing.xl),
 
             AppCard(
@@ -253,30 +537,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   TextField(
                     controller: _nameController,
-                    style: AppTextStyles.bodyLarge,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre completo',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Nombre completo'),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  
                   TextField(
                     controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: AppTextStyles.bodyLarge,
                     readOnly: true, 
                     decoration: const InputDecoration(
                       labelText: 'Correo electrónico',
+                      hintText: 'Usa el botón de abajo para cambiarlo'
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-
+                  // NUEVO: Campo Sobre mí
                   TextField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    style: AppTextStyles.bodyLarge,
+                    controller: _bioController,
+                    maxLines: 4, // Lo hace más alto, como un recuadro
+                    maxLength: 150, // Límite de caracteres para que no escriban El Quijote
                     decoration: const InputDecoration(
-                      labelText: 'Nueva Contraseña (opcional)',
+                      labelText: 'Sobre mí',
+                      hintText: 'Ej: Me encanta el senderismo y los juegos de mesa...',
+                      alignLabelWithHint: true, // Alinea el texto "Sobre mí" arriba a la izquierda
                     ),
                   ),
                 ],
@@ -287,25 +568,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             AppPrimaryButton(
               label: 'Guardar Cambios',
-              isLoading: _isLoading, // Muestra indicador de carga al guardar
-              onPressed: _isSaveEnabled && !_isLoading ? _guardarCambios : null,
+              isLoading: _isLoading,
+              onPressed: _isSaveEnabled && !_isLoading ? _guardarDatosBasicos : null,
             ),
 
             const SizedBox(height: AppSpacing.xxl),
+            const Divider(),
+            const SizedBox(height: AppSpacing.md),
 
             SizedBox(
-              width: double.infinity,
-              height: 52,
+              width: double.infinity, height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.primary)),
+                onPressed: _isLoading ? null : _mostrarDialogoCambioCorreo,
+                icon: const Icon(Icons.email_outlined),
+                label: const Text('Cambiar Correo Electrónico'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            SizedBox(
+              width: double.infinity, height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary, side: const BorderSide(color: AppColors.primary)),
+                onPressed: _isLoading ? null : _mostrarDialogoCambioPassword,
+                icon: const Icon(Icons.lock_reset_rounded),
+                label: const Text('Cambiar Contraseña'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            SizedBox(
+              width: double.infinity, height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.textPrimary, side: const BorderSide(color: AppColors.textHint)),
+                onPressed: _isLoading ? null : () async => await FirebaseAuth.instance.signOut(),
+                icon: const Icon(Icons.logout_rounded),
+                label: const Text('Cerrar sesión'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            SizedBox(
+              width: double.infinity, height: 52,
               child: OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(color: AppColors.error),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                ),
+                style: OutlinedButton.styleFrom(foregroundColor: AppColors.error, side: const BorderSide(color: AppColors.error)),
                 onPressed: _isLoading ? null : _showDeleteConfirmationDialog,
-                child: Text('Eliminar cuenta', style: AppTextStyles.button),
+                child: const Text('Eliminar cuenta'),
               ),
             ),
           ],

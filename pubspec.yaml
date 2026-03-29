@@ -38,6 +38,8 @@ dependencies:
   firebase_auth: ^6.2.0
   cloud_firestore: ^6.1.3
   google_maps_flutter: ^2.16.0
+  image_picker: ^1.2.1
+  firebase_storage: ^13.2.0
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +65,7 @@ flutter:
 
   assets:
     - assets/images/Logo.png
+    - assets/images/avatars/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
