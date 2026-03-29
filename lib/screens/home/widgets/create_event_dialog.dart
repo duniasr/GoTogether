@@ -236,23 +236,64 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 title: const Text('Evento verificado', style: AppTextStyles.labelLarge),
                 subtitle: const Text('Evento validado por la organización.', style: AppTextStyles.bodyMedium),
                 value: _esVerificado,
-              onChanged: _guardando
-                  ? null
-                  : (v) => setState(() => _esVerificado = v),
+                onChanged: _guardando
+                    ? null
+                    : (v) => setState(() => _esVerificado = v),
               ),
             ),
           ],
         ),
       ),
+      // Ajustamos los márgenes de los botones para que respiren bien
+      actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 24, top: 0),
       actions: [
-        TextButton(
-          onPressed: _guardando ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        AppPrimaryButton(
-          label: 'Crear plan',
-          isLoading: _guardando,
-          onPressed: _submit,
+        SizedBox(
+          width: double.infinity, // Hace que ocupe todo el ancho
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _guardando ? null : () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _guardando ? null : _submit,
+                child: _guardando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        'Crear plan',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ],
     );

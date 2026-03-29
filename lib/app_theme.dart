@@ -44,7 +44,14 @@ class AppColors {
     'Deporte': Color(0xFF10B981),
     'Cultura': Color(0xFF8B5CF6),
     'Gastronomía': Color(0xFFF59E0B),
-    'Aire libre': Color(0xFF06B6D4),
+    'Naturaleza': Color(0xFF84CC16), // Verde agua
+    'Estudio': Color(0xFF3B82F6),    // Azul
+    'Ocio': Color(0xFFF43F5E),       // Rojo rosa
+    'Voluntariado': Color(0xFF14B8A6), // Cyan
+    'Viajes': Color(0xFF0EA5E9),     // Azul claro
+    'Videojuegos': Color(0xFF6366F1), // Azul índigo
+    'Música': Color(0xFFD946EF),     // Fucsia
+    'Networking': Color(0xFFEAB308), // Mostaza
     'Otros': Color(0xFF64748B),
   };
 }

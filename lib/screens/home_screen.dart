@@ -22,11 +22,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<String> _categories = [
     'Todos',
-    'Fiesta',
     'Deporte',
+    'Naturaleza',
+    'Estudio',
+    'Ocio',
     'Cultura',
     'Gastronomía',
-    'Aire libre',
+    'Fiesta',
+    'Voluntariado',
+    'Viajes',
+    'Videojuegos',
+    'Música',
+    'Networking',
+    'Otros',
   ];
 
   @override
@@ -53,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: FloatingActionButton.extended(
                 onPressed: () => showCreateEventDialog(context, _service),
-                backgroundColor: AppColors.primary,
+                backgroundColor: Color(0xFFF59E0B),
                 foregroundColor: Colors.white,
                 icon: const Icon(Icons.add_rounded, size: 22),
                 label: Text(
