@@ -473,23 +473,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+// --- LÓGICA DE BORRADO DE CUENTA (HU-03 CORREGIDA) ---
   void _showDeleteConfirmationDialog() {
+    final passwordController = TextEditingController();
+    bool isDeleting = false;
+
     showDialog(
       context: context,
-      barrierDismissible: !_isLoading, 
+      barrierDismissible: false, 
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: const Text("Eliminar cuenta", style: AppTextStyles.headlineMedium),
-          content: const Text("¿Estás seguro? Esta acción es irreversible.", style: AppTextStyles.bodyLarge),
-          actions: [
-            TextButton(onPressed: _isLoading ? null : () => Navigator.of(context).pop(), child: const Text("Cancelar")),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
-              onPressed: _isLoading ? null : _eliminarCuenta, 
-              child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("Aceptar"),
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: const Text("Eliminar cuenta", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("¿Estás seguro? Esta acción es irreversible.", style: AppTextStyles.bodyLarge),
+                  const SizedBox(height: AppSpacing.md),
+                  const Text("Por seguridad, confirma tu contraseña:", style: AppTextStyles.bodyMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(labelText: 'Contraseña', border: OutlineInputBorder()),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting ? null : () => Navigator.of(context).pop(), 
+                  child: const Text("Cancelar", style: TextStyle(color: AppColors.textSecondary))
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+                  onPressed: isDeleting ? null : () async {
+                    if (passwordController.text.trim().isEmpty) return;
+
+                    setStateDialog(() => isDeleting = true);
+                    try {
+                      final user = FirebaseAuth.instance.currentUser!;
+                      
+                      // 1. REAUTENTICAR AL USUARIO (Evita el error de "iniciar sesión de nuevo")
+                      AuthCredential credential = EmailAuthProvider.credential(
+                        email: user.email!, 
+                        password: passwordController.text.trim()
+                      );
+                      await user.reauthenticateWithCredential(credential);
+
+                      final db = FirebaseFirestore.instance;
+
+                      // 2. ACTUALIZAR ESTADO DE LOS EVENTOS DEL USUARIO
+                      // Buscamos por el nombre, ya que es lo que guarda ahora "organizador"
+                      final queryByName = await db.collection('events').where('organizador', isEqualTo: _nameController.text.trim()).get();
+                      for (final doc in queryByName.docs) {
+                        // Cambiamos el estado a cancelada en lugar de borrarlo por completo
+                        await doc.reference.update({'estado': 'cancelada'});
+                      }
+
+                      // 3. BORRAR DOCUMENTO DE FIRESTORE
+                      try { await db.collection('users').doc(user.uid).delete(); } catch (e) {}
+
+                      // 4. BORRAR USUARIO DE AUTHENTICATION
+                      await user.delete(); 
+
+                      // 5. REDIRECCIÓN (Si tu app tiene un AuthStateListener en main.dart, 
+                      // al hacer user.delete() saltará automáticamente al Login)
+                      if (mounted) {
+                        Navigator.of(context).pop();
+                        // Nota: Puede que este SnackBar no se llegue a ver porque la app te expulsará al Login casi al instante.
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cuenta eliminada correctamente.'), backgroundColor: AppColors.success));
+                      }
+                    } on FirebaseAuthException catch (e) {
+                      String mensaje = 'Error al eliminar la cuenta.';
+                      if (e.code == 'wrong-password' || e.code == 'invalid-credential') mensaje = 'La contraseña es incorrecta.';
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje), backgroundColor: Colors.red));
+                    } finally {
+                      setStateDialog(() => isDeleting = false);
+                    }
+                  }, 
+                  child: isDeleting 
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+                      : const Text("Aceptar"),
+                ),
+              ],
+            );
+          }
         );
       },
     );
