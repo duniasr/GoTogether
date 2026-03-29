@@ -33,7 +33,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'assets/images/avatars/avatar8.png',
     'assets/images/avatars/avatar9.png',
     'assets/images/avatars/avatar10.png',
-    'assets/images/avatars/avatar11.png'
+    'assets/images/avatars/avatar11.png',
+    'assets/images/avatars/avatar12.png',
+    'assets/images/avatars/avatar13.png',
+    'assets/images/avatars/avatar14.png',
+    'assets/images/avatars/avatar15.png'
   ];
 
   @override
