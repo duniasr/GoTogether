@@ -187,6 +187,32 @@ class _MiPlanCardState extends State<_MiPlanCard> {
 
   // ── Borrar (solo creador) ──────────────────
   Future<void> _eliminar() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: const Text('Eliminar plan'),
+        content: Text(
+          '¿Seguro que quieres eliminar "${widget.quedada.titulo}"?\nEsta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirmar) return;
+
     try {
       await widget.service.eliminarQuedada(widget.quedada.id);
       if (!mounted) return;
@@ -403,12 +429,17 @@ class _EditDialogState extends State<_EditDialog> {
   ];
   static const _estados = ['abierta', 'cerrada', 'cancelada'];
 
+  final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _titulo;
   late final TextEditingController _descripcion;
   late final TextEditingController _cupo;
   late String _tematica;
   late String _estado;
   bool _guardando = false;
+
+  // Número de asistentes actuales (cupo mínimo permitido)
+  int get _asistentesActuales => widget.quedada.asistentesId.length;
 
   @override
   void initState() {
@@ -430,9 +461,9 @@ class _EditDialogState extends State<_EditDialog> {
   }
 
   Future<void> _guardar() async {
-    final cupo = int.tryParse(_cupo.text.trim());
-    if (_titulo.text.trim().isEmpty || cupo == null || cupo <= 0) return;
+    if (!_formKey.currentState!.validate()) return;
 
+    final cupo = int.parse(_cupo.text.trim());
     setState(() => _guardando = true);
     try {
       await widget.service.actualizarQuedada(
@@ -461,40 +492,78 @@ class _EditDialogState extends State<_EditDialog> {
           borderRadius: BorderRadius.circular(AppRadius.lg)),
       title: const Text('Editar plan', style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: _titulo,
-                decoration: const InputDecoration(labelText: 'Título')),
-            const SizedBox(height: AppSpacing.md),
-            TextField(controller: _descripcion, maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Descripción')),
-            const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<String>(
-              value: _tematica,
-              decoration: const InputDecoration(labelText: 'Temática'),
-              items: _tematicas
-                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                  .toList(),
-              onChanged: (v) { if (v != null) setState(() => _tematica = v); },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            TextField(controller: _cupo,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Título
+              TextFormField(
+                controller: _titulo,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Título'),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'El título no puede estar vacío';
+                  if (!RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(v.trim())) {
+                    return 'Debe incluir al menos una letra';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Descripción
+              TextFormField(
+                controller: _descripcion,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Descripción'),
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? 'La descripción no puede estar vacía' : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Temática (dropdown, siempre válido)
+              DropdownButtonFormField<String>(
+                value: _tematica,
+                decoration: const InputDecoration(labelText: 'Temática'),
+                items: _tematicas
+                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .toList(),
+                onChanged: (v) { if (v != null) setState(() => _tematica = v); },
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Cupo máximo
+              TextFormField(
+                controller: _cupo,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Cupo máximo')),
-            const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<String>(
-              value: _estado,
-              decoration: const InputDecoration(labelText: 'Estado'),
-              items: _estados
-                  .map((e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e[0].toUpperCase() + e.substring(1)),
-                      ))
-                  .toList(),
-              onChanged: (v) { if (v != null) setState(() => _estado = v); },
-            ),
-          ],
+                decoration: const InputDecoration(labelText: 'Cupo máximo'),
+                validator: (v) {
+                  final n = int.tryParse(v?.trim() ?? '');
+                  if (n == null) return 'Introduce un número válido';
+                  if (n <= 0) return 'El cupo debe ser mayor que 0';
+                  if (n < _asistentesActuales) {
+                    return 'Mínimo $_asistentesActuales (personas ya apuntadas)';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+
+              // Estado
+              DropdownButtonFormField<String>(
+                value: _estado,
+                decoration: const InputDecoration(labelText: 'Estado'),
+                items: _estados
+                    .map((e) => DropdownMenuItem(
+                          value: e,
+                          child: Text(e[0].toUpperCase() + e.substring(1)),
+                        ))
+                    .toList(),
+                onChanged: (v) { if (v != null) setState(() => _estado = v); },
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
