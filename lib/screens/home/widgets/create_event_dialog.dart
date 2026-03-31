@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart'; // Recuerda tener esto en pubspec.yaml
 import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
 
@@ -37,7 +38,6 @@ class _CreateEventDialog extends StatefulWidget {
 }
 
 class _CreateEventDialogState extends State<_CreateEventDialog> {
-  // Controllers creados UNA VEZ en initState y liberados en dispose()
   late final TextEditingController _tituloCtrl;
   late final TextEditingController _descripcionCtrl;
   late final TextEditingController _cupoCtrl;
@@ -45,24 +45,23 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   late final TextEditingController _lonCtrl;
 
   static const List<String> _tematicas = [
-    'Deporte',
-    'Naturaleza',
-    'Estudio',
-    'Ocio',
-    'Cultura',
-    'Gastronomía',
-    'Fiesta',
-    'Voluntariado',
-    'Viajes',
-    'Videojuegos',
-    'Música',
-    'Networking',
-    'Otros',
+    'Deporte', 'Naturaleza', 'Estudio', 'Ocio', 'Cultura',
+    'Gastronomía', 'Fiesta', 'Voluntariado', 'Viajes', 
+    'Videojuegos', 'Música', 'Networking', 'Otros',
   ];
 
   String _tematica = 'Deporte';
   bool _esVerificado = false;
   bool _guardando = false;
+  String? _errorMessage; 
+  
+  bool _intentado = false; 
+
+  // Variables para fechas y horas
+  DateTime? _startDate;
+  TimeOfDay? _startTime;
+  DateTime? _endDate;
+  TimeOfDay? _endTime;
 
   @override
   void initState() {
@@ -72,6 +71,16 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     _cupoCtrl = TextEditingController();
     _latCtrl = TextEditingController();
     _lonCtrl = TextEditingController();
+
+    _tituloCtrl.addListener(_onTextChanged);
+    _descripcionCtrl.addListener(_onTextChanged);
+    _cupoCtrl.addListener(_onTextChanged);
+    _latCtrl.addListener(_onTextChanged);
+    _lonCtrl.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (_intentado) setState(() {});
   }
 
   @override
@@ -84,46 +93,113 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     super.dispose();
   }
 
+  // --- MÉTODOS DE VALIDACIÓN INDIVIDUAL ---
+  bool get _tituloInvalido => _intentado && _tituloCtrl.text.trim().isEmpty;
+  bool get _descInvalido => _intentado && _descripcionCtrl.text.trim().isEmpty;
+  bool get _cupoInvalido {
+    if (!_intentado) return false;
+    final val = int.tryParse(_cupoCtrl.text.trim());
+    return val == null || val <= 0;
+  }
+  bool get _latInvalida {
+    if (!_intentado) return false;
+    final val = double.tryParse(_latCtrl.text.trim().replaceAll(',', '.'));
+    return val == null || val < -90 || val > 90;
+  }
+  bool get _lonInvalida {
+    if (!_intentado) return false;
+    final val = double.tryParse(_lonCtrl.text.trim().replaceAll(',', '.'));
+    return val == null || val < -180 || val > 180;
+  }
+  bool get _fechasInvalidas {
+    if (!_intentado) return false;
+    return _startDate == null || _startTime == null || _endDate == null || _endTime == null || !_fechasLogicas();
+  }
+
+  bool _fechasLogicas() {
+    if (_startDate == null || _startTime == null || _endDate == null || _endTime == null) return false;
+    final start = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
+    final end = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
+    return end.isAfter(start);
+  }
+
+  // --- MÉTODOS PARA SELECCIONAR FECHA Y HORA ---
+  Future<void> _selectDateTime({required bool isStart}) async {
+    // 1. Pide la fecha
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? _startDate ?? DateTime.now()),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (pickedDate != null && mounted) {
+      // 2. Pide la hora inmediatamente después
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: isStart ? (_startTime ?? TimeOfDay.now()) : (_endTime ?? _startTime ?? TimeOfDay.now()),
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          if (isStart) {
+            _startDate = pickedDate;
+            _startTime = pickedTime;
+            // Auto-ajustar fin si es anterior al inicio
+            if (!_fechasLogicas()) {
+              _endDate = null;
+              _endTime = null;
+            }
+          } else {
+            _endDate = pickedDate;
+            _endTime = pickedTime;
+          }
+        });
+        _onTextChanged();
+      }
+    }
+  }
+
+  String _formatDateTime(DateTime? date, TimeOfDay? time) {
+    if (date == null || time == null) return 'Select Date & Time';
+    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    return DateFormat('dd MMM yyyy, HH:mm').format(dt);
+  }
+  // ------------------------------------------------
+
   Future<void> _submit() async {
+    setState(() => _intentado = true); 
+
     final titulo = _tituloCtrl.text.trim();
     final descripcion = _descripcionCtrl.text.trim();
     final cupoMax = int.tryParse(_cupoCtrl.text.trim());
     final lat = double.tryParse(_latCtrl.text.trim().replaceAll(',', '.'));
     final lon = double.tryParse(_lonCtrl.text.trim().replaceAll(',', '.'));
 
-    final ubicacionValida = lat != null &&
-        lon != null &&
-        lat >= -90 &&
-        lat <= 90 &&
-        lon >= -180 &&
-        lon <= 180;
-
-    if (titulo.isEmpty ||
-        descripcion.isEmpty ||
-        cupoMax == null ||
-        cupoMax <= 0 ||
-        !ubicacionValida) {
-      widget.messenger.showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Por favor, completa todos los campos correctamente.',
-          ),
-        ),
-      );
+    if (_tituloInvalido || _descInvalido || _cupoInvalido || _latInvalida || _lonInvalida || _fechasInvalidas) {
+      setState(() {
+        _errorMessage = 'Please review the highlighted fields. Ensure end time is after start time.';
+      });
       return;
     }
 
-    setState(() => _guardando = true);
+    setState(() {
+      _errorMessage = null; 
+      _guardando = true;
+    });
 
     try {
+      // final startTimestamp = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
+      // final endTimestamp = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
+
       await widget.service.crearQuedada(
         titulo: titulo,
         descripcion: descripcion,
         organizador: '',
         tematica: _tematica,
-        cupoMax: cupoMax,
-        latitud: lat,
-        longitud: lon,
+        cupoMax: cupoMax!,
+        latitud: lat!,
+        longitud: lon!,
         estado: 'abierta',
         esVerificado: _esVerificado,
       );
@@ -131,46 +207,49 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
       if (!mounted) return;
       Navigator.of(context).pop();
       widget.messenger.showSnackBar(
-        const SnackBar(content: Text('Plan creado correctamente.')),
+        const SnackBar(content: Text('Plan successfully created.'), backgroundColor: Colors.green),
       );
     } catch (e) {
-      if (mounted) setState(() => _guardando = false);
-      widget.messenger.showSnackBar(
-        SnackBar(content: Text('Error al crear el plan: $e')),
-      );
+      setState(() {
+        _guardando = false;
+        _errorMessage = 'Error creating plan: $e';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Nuevo plan', style: AppTextStyles.headlineMedium),
+      title: const Text('New Plan', style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: _tituloCtrl,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'Título *',
-                prefixIcon: Icon(Icons.title_rounded),
+              decoration: InputDecoration(
+                labelText: 'Title *',
+                prefixIcon: const Icon(Icons.title_rounded),
+                errorText: _tituloInvalido ? 'Required field' : null, 
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _descripcionCtrl,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Descripción *',
-                prefixIcon: Icon(Icons.notes_rounded),
+              decoration: InputDecoration(
+                labelText: 'Description *',
+                prefixIcon: const Icon(Icons.notes_rounded),
+                errorText: _descInvalido ? 'Required field' : null,
               ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _tematica,
               decoration: const InputDecoration(
-                labelText: 'Temática *',
+                labelText: 'Category *',
                 prefixIcon: Icon(Icons.category_outlined),
               ),
               items: _tematicas
@@ -183,28 +262,82 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                     },
             ),
             const SizedBox(height: 12),
+            
+            // --- CALENDARIO INICIO Y FIN (MEJORADO VISUALMENTE) ---
+            Text('Event Schedule *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _guardando ? null : () => _selectDateTime(isStart: true),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: _fechasInvalidas && _startDate == null ? AppColors.error : Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_month_rounded, size: 20, color: _startDate == null ? Colors.grey : AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Start: ${_formatDateTime(_startDate, _startTime)}',
+                        style: TextStyle(color: _startDate == null ? Colors.grey.shade600 : AppColors.textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _guardando ? null : () => _selectDateTime(isStart: false),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                decoration: BoxDecoration(
+                  border: Border.all(color: _fechasInvalidas && _endDate == null ? AppColors.error : Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.event_available_rounded, size: 20, color: _endDate == null ? Colors.grey : AppColors.primary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'End: ${_formatDateTime(_endDate, _endTime)}',
+                        style: TextStyle(color: _endDate == null ? Colors.grey.shade600 : AppColors.textPrimary),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            // --------------------------------------------------------
+
             TextField(
               controller: _cupoCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Cupo máximo *',
-                prefixIcon: Icon(Icons.groups_2_outlined),
+              decoration: InputDecoration(
+                labelText: 'Max Participants *',
+                prefixIcon: const Icon(Icons.groups_2_outlined),
+                errorText: _cupoInvalido ? 'Must be > 0' : null,
               ),
             ),
             const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start, 
               children: [
                 Expanded(
                   child: TextField(
                     controller: _latCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Latitud *',
-                      hintText: 'Ej: 28.1248',
-                      prefixIcon: Icon(Icons.place_outlined),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    decoration: InputDecoration(
+                      labelText: 'Latitude *',
+                      hintText: 'e.g. 28.1248',
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      errorText: _latInvalida ? 'Invalid' : null,
                     ),
                   ),
                 ),
@@ -212,14 +345,12 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 Expanded(
                   child: TextField(
                     controller: _lonCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                      signed: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Longitud *',
-                      hintText: 'Ej: -15.43',
-                      prefixIcon: Icon(Icons.explore_outlined),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    decoration: InputDecoration(
+                      labelText: 'Longitude *',
+                      hintText: 'e.g. -15.43',
+                      prefixIcon: const Icon(Icons.explore_outlined),
+                      errorText: _lonInvalida ? 'Invalid' : null,
                     ),
                   ),
                 ),
@@ -233,8 +364,8 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               ),
               child: SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                title: const Text('Evento verificado', style: AppTextStyles.labelLarge),
-                subtitle: const Text('Evento validado por la organización.', style: AppTextStyles.bodyMedium),
+                title: const Text('Verified Event', style: AppTextStyles.labelLarge),
+                subtitle: const Text('Event validated by organization.', style: AppTextStyles.bodyMedium),
                 value: _esVerificado,
                 onChanged: _guardando
                     ? null
@@ -244,53 +375,64 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
           ],
         ),
       ),
-      // Ajustamos los márgenes de los botones para que respiren bien
       actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 24, top: 0),
       actions: [
         SizedBox(
-          width: double.infinity, // Hace que ocupe todo el ancho
+          width: double.infinity, 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_errorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1), 
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.error),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _guardando ? null : () => Navigator.of(context).pop(),
                   child: const Text(
-                    'Cancelar',
-                    style: TextStyle(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    'Cancel',
+                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
               const SizedBox(height: 4),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFFF59E0B),
+                  backgroundColor: const Color(0xFFF59E0B),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 onPressed: _guardando ? null : _submit,
                 child: _guardando
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        'Crear plan',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Create Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),
