@@ -128,6 +128,8 @@ class QuedadasService {
     required String tematica,
     required int cupoMax,
     required String estado,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
   }) async {
     await _eventsRef.doc(eventoId).update({
       'titulo': titulo.trim(),
@@ -135,6 +137,12 @@ class QuedadasService {
       'tematica': tematica,
       'cupoMax': cupoMax,
       'estado': estado,
+      'fechaInicio': fechaInicio != null
+          ? Timestamp.fromDate(fechaInicio)
+          : FieldValue.delete(),
+      'fechaFin': fechaFin != null
+          ? Timestamp.fromDate(fechaFin)
+          : FieldValue.delete(),
     });
   }
 

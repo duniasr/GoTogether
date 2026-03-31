@@ -9,6 +9,8 @@ class Quedada {
     required this.descripcion,
     required this.esVerificado,
     required this.estado,
+    this.fechaInicio,
+    this.fechaFin,
     required this.organizador,
     required this.plazasLibres,
     required this.tematica,
@@ -23,6 +25,8 @@ class Quedada {
   final String descripcion;
   final bool esVerificado;
   final String estado;
+  final DateTime? fechaInicio;
+  final DateTime? fechaFin;
   final String organizador;
   final int plazasLibres;
   final String tematica;
@@ -32,6 +36,9 @@ class Quedada {
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final asistentesRaw = data['asistentesID'];
+    final ts = data['fechaHora'];
+    final tsInicio = data['fechaInicio'];
+    final tsFin = data['fechaFin'];
 
     return Quedada(
       id: doc.id,
@@ -43,6 +50,8 @@ class Quedada {
       descripcion: data['descripcion'] as String? ?? '',
       esVerificado: data['esVerificado'] as bool? ?? false,
       estado: data['estado'] as String? ?? 'abierta',
+      fechaInicio: tsInicio is Timestamp ? tsInicio.toDate() : null,
+      fechaFin: tsFin is Timestamp ? tsFin.toDate() : null,
       organizador: data['organizador'] as String? ?? 'anonimo',
       plazasLibres: (data['plazasLibres'] as num?)?.toInt() ?? 0,
       tematica: data['tematica'] as String? ?? 'Otros',
@@ -59,6 +68,8 @@ class Quedada {
       'descripcion': descripcion,
       'esVerificado': esVerificado,
       'estado': estado,
+      if (fechaInicio != null) 'fechaInicio': Timestamp.fromDate(fechaInicio!),
+      if (fechaFin != null) 'fechaFin': Timestamp.fromDate(fechaFin!),
       'organizador': organizador,
       'plazasLibres': plazasLibres,
       'tematica': tematica,

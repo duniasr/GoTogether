@@ -436,6 +436,8 @@ class _EditDialogState extends State<_EditDialog> {
   late final TextEditingController _cupo;
   late String _tematica;
   late String _estado;
+  DateTime? _fechaInicio;
+  DateTime? _fechaFin;
   bool _guardando = false;
 
   // Número de asistentes actuales (cupo mínimo permitido)
@@ -450,6 +452,8 @@ class _EditDialogState extends State<_EditDialog> {
     _cupo        = TextEditingController(text: q.cupoMax.toString());
     _tematica = _tematicas.contains(q.tematica) ? q.tematica : _tematicas.first;
     _estado   = _estados.contains(q.estado) ? q.estado : _estados.first;
+    _fechaInicio = q.fechaInicio;
+    _fechaFin    = q.fechaFin;
   }
 
   @override
@@ -473,6 +477,8 @@ class _EditDialogState extends State<_EditDialog> {
         tematica: _tematica,
         cupoMax: cupo,
         estado: _estado,
+        fechaInicio: _fechaInicio,
+        fechaFin: _fechaFin,
       );
       if (!mounted) return;
       Navigator.pop(context);
@@ -548,6 +554,23 @@ class _EditDialogState extends State<_EditDialog> {
                   return null;
                 },
               ),
+              // Fecha de inicio
+              const SizedBox(height: AppSpacing.md),
+              _DateTimePicker(
+                label: 'Inicio',
+                value: _fechaInicio,
+                onPicked: (dt) => setState(() => _fechaInicio = dt),
+                onCleared: () => setState(() => _fechaInicio = null),
+              ),
+
+              // Fecha de fin
+              const SizedBox(height: AppSpacing.md),
+              _DateTimePicker(
+                label: 'Fin',
+                value: _fechaFin,
+                onPicked: (dt) => setState(() => _fechaFin = dt),
+                onCleared: () => setState(() => _fechaFin = null),
+              ),
               const SizedBox(height: AppSpacing.md),
 
               // Estado
@@ -580,6 +603,83 @@ class _EditDialogState extends State<_EditDialog> {
               : const Text('Guardar'),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Picker reutilizable de fecha + hora
+// ─────────────────────────────────────────────
+class _DateTimePicker extends StatefulWidget {
+  final String label;
+  final DateTime? value;
+  final ValueChanged<DateTime> onPicked;
+  final VoidCallback onCleared;
+
+  const _DateTimePicker({
+    required this.label,
+    required this.value,
+    required this.onPicked,
+    required this.onCleared,
+  });
+
+  @override
+  State<_DateTimePicker> createState() => _DateTimePickerState();
+}
+
+class _DateTimePickerState extends State<_DateTimePicker> {
+  static String _fmt(DateTime dt) =>
+      '${dt.day.toString().padLeft(2, '0')}/'
+      '${dt.month.toString().padLeft(2, '0')}/'
+      '${dt.year}  '
+      '${dt.hour.toString().padLeft(2, '0')}:'
+      '${dt.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _pick() async {
+    final hoy = DateTime.now();
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: widget.value ?? hoy,
+      firstDate: DateTime(hoy.year - 1),
+      lastDate: DateTime(hoy.year + 5),
+    );
+    if (fecha == null || !mounted) return;
+
+    final hora = await showTimePicker(
+      context: context,
+      initialTime: widget.value != null
+          ? TimeOfDay.fromDateTime(widget.value!)
+          : TimeOfDay.now(),
+    );
+    if (hora == null || !mounted) return;
+
+    widget.onPicked(DateTime(
+        fecha.year, fecha.month, fecha.day, hora.hour, hora.minute));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      onTap: _pick,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Fecha ${widget.label}',
+          prefixIcon: const Icon(Icons.calendar_today_outlined),
+          suffixIcon: widget.value != null
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: widget.onCleared,
+                )
+              : null,
+        ),
+        child: Text(
+          widget.value != null ? _fmt(widget.value!) : 'Sin fecha',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: widget.value != null ? null : AppColors.textHint,
+          ),
+        ),
+      ),
     );
   }
 }
