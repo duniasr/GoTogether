@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Recuerda tener esto en pubspec.yaml
+import 'package:intl/intl.dart'; 
 import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
+import '../../../widgets/date_time_picker.dart';
 
 /// Muestra el diálogo de creación de evento usando un StatefulWidget
 /// para garantizar el ciclo de vida correcto de los TextEditingController.
@@ -39,6 +40,8 @@ class _CreateEventDialog extends StatefulWidget {
 }
 
 class _CreateEventDialogState extends State<_CreateEventDialog> {
+  final _formKey = GlobalKey<FormState>();
+
   late final TextEditingController _tituloCtrl;
   late final TextEditingController _descripcionCtrl;
   late final TextEditingController _cupoCtrl;
@@ -55,14 +58,10 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   bool _esVerificado = false;
   bool _guardando = false;
   String? _errorMessage; 
-  
-  bool _intentado = false; 
 
-  // Variables para fechas y horas
-  DateTime? _startDate;
-  TimeOfDay? _startTime;
-  DateTime? _endDate;
-  TimeOfDay? _endTime;
+  // Fechas estilo EditDialog
+  DateTime? _fechaInicio;
+  DateTime? _fechaFin;
 
   @override
   void initState() {
@@ -72,16 +71,6 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     _cupoCtrl = TextEditingController();
     _latCtrl = TextEditingController();
     _lonCtrl = TextEditingController();
-
-    _tituloCtrl.addListener(_onTextChanged);
-    _descripcionCtrl.addListener(_onTextChanged);
-    _cupoCtrl.addListener(_onTextChanged);
-    _latCtrl.addListener(_onTextChanged);
-    _lonCtrl.addListener(_onTextChanged);
-  }
-
-  void _onTextChanged() {
-    if (_intentado) setState(() {});
   }
 
   @override
@@ -94,103 +83,30 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     super.dispose();
   }
 
-  // --- MÉTODOS DE VALIDACIÓN INDIVIDUAL (Para poner los campos en rojo) ---
-  bool get _tituloInvalido {
-    if (!_intentado) return false;
-    final t = _tituloCtrl.text.trim();
-    if (t.isEmpty) return true;
-    // Debe contener al menos una letra (no solo números o símbolos)
-    return !RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(t);
-  }
-  bool get _descInvalido => _intentado && _descripcionCtrl.text.trim().isEmpty;
-  bool get _cupoInvalido {
-    if (!_intentado) return false;
-    final val = int.tryParse(_cupoCtrl.text.trim());
-    return val == null || val <= 0;
-  }
-  bool get _latInvalida {
-    if (!_intentado) return false;
-    final val = double.tryParse(_latCtrl.text.trim().replaceAll(',', '.'));
-    return val == null || val < -90 || val > 90;
-  }
-  bool get _lonInvalida {
-    if (!_intentado) return false;
-    final val = double.tryParse(_lonCtrl.text.trim().replaceAll(',', '.'));
-    return val == null || val < -180 || val > 180;
-  }
-  bool get _fechasInvalidas {
-    if (!_intentado) return false;
-    return _startDate == null || _startTime == null || _endDate == null || _endTime == null || !_fechasLogicas();
-  }
-
-  bool _fechasLogicas() {
-    if (_startDate == null || _startTime == null || _endDate == null || _endTime == null) return false;
-    final start = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
-    final end = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
-    return end.isAfter(start);
-  }
-
-  // --- MÉTODOS PARA SELECCIONAR FECHA Y HORA ---
-  Future<void> _selectDateTime({required bool isStart}) async {
-    // 1. Pide la fecha
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? _startDate ?? DateTime.now()),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (pickedDate != null && mounted) {
-      // 2. Pide la hora inmediatamente después
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: isStart ? (_startTime ?? TimeOfDay.now()) : (_endTime ?? _startTime ?? TimeOfDay.now()),
-      );
-
-      if (pickedTime != null) {
-        setState(() {
-          if (isStart) {
-            _startDate = pickedDate;
-            _startTime = pickedTime;
-            // Auto-ajustar fin si no hay o es anterior al inicio
-            if (!_fechasLogicas()) {
-              final startDT = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
-              final autoEndDT = startDT.add(const Duration(hours: 2));
-              _endDate = DateTime(autoEndDT.year, autoEndDT.month, autoEndDT.day);
-              _endTime = TimeOfDay(hour: autoEndDT.hour, minute: autoEndDT.minute);
-            }
-          } else {
-            _endDate = pickedDate;
-            _endTime = pickedTime;
-          }
-        });
-        _onTextChanged();
-      }
-    }
-  }
-
-  String _formatDateTime(DateTime? date, TimeOfDay? time) {
-    if (date == null || time == null) return 'Select Date & Time';
-    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    return DateFormat('dd MMM yyyy, HH:mm').format(dt);
-  }
-  // ------------------------------------------------
-
   Future<void> _submit() async {
-    setState(() => _intentado = true); 
-
-    final titulo = _tituloCtrl.text.trim();
-    final descripcion = _descripcionCtrl.text.trim();
-    final cupoMax = int.tryParse(_cupoCtrl.text.trim());
-    final lat = double.tryParse(_latCtrl.text.trim().replaceAll(',', '.'));
-    final lon = double.tryParse(_lonCtrl.text.trim().replaceAll(',', '.'));
-
-    if (_tituloInvalido || _descInvalido || _cupoInvalido || _latInvalida || _lonInvalida || _fechasInvalidas) {
-      setState(() {
-        _errorMessage = 'Please review the highlighted fields. Ensure end time is after start time.';
-      });
+    if (!_formKey.currentState!.validate()) {
+      setState(() => _errorMessage = 'Please review the highlighted fields.');
       return;
     }
+
+    if (_fechaInicio == null || _fechaFin == null) {
+      setState(() => _errorMessage = 'Please select both start and end dates.');
+      return;
+    }
+
+    if (_fechaFin!.isBefore(_fechaInicio!) || _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
+      setState(() => _errorMessage = 'End date must be strictly after start date.');
+      return;
+    }
+
+    if (_fechaInicio!.isBefore(DateTime.now().subtract(const Duration(minutes: 5)))) {
+      setState(() => _errorMessage = 'Start date cannot be in the past.');
+      return;
+    }
+
+    final cupoMax = int.parse(_cupoCtrl.text.trim());
+    final lat = double.parse(_latCtrl.text.trim().replaceAll(',', '.'));
+    final lon = double.parse(_lonCtrl.text.trim().replaceAll(',', '.'));
 
     setState(() {
       _errorMessage = null; 
@@ -198,21 +114,18 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     });
 
     try {
-      final startTimestamp = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
-      final endTimestamp = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
-
       await widget.service.crearQuedada(
-        titulo: titulo,
-        descripcion: descripcion,
+        titulo: _tituloCtrl.text.trim(),
+        descripcion: _descripcionCtrl.text.trim(),
         organizador: '',
         tematica: _tematica,
-        cupoMax: cupoMax!,
-        latitud: lat!,
-        longitud: lon!,
+        cupoMax: cupoMax,
+        latitud: lat,
+        longitud: lon,
         estado: 'abierta',
         esVerificado: _esVerificado,
-        fechaInicio: startTimestamp,
-        fechaFin: endTimestamp,
+        fechaInicio: _fechaInicio!,
+        fechaFin: _fechaFin!,
       );
 
       if (!mounted) return;
@@ -221,6 +134,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         const SnackBar(content: Text('Plan successfully created.'), backgroundColor: Colors.green),
       );
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _guardando = false;
         _errorMessage = 'Error creating plan: $e';
@@ -233,157 +147,149 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     return AlertDialog(
       title: const Text('New Plan', style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              controller: _tituloCtrl,
-              textInputAction: TextInputAction.next,
-              decoration: InputDecoration(
-                labelText: 'Title *',
-                prefixIcon: const Icon(Icons.title_rounded),
-                errorText: _tituloInvalido ? 'Required field' : null, 
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descripcionCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: 'Description *',
-                prefixIcon: const Icon(Icons.notes_rounded),
-                errorText: _descInvalido ? 'Required field' : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _tematica,
-              decoration: const InputDecoration(
-                labelText: 'Category *',
-                prefixIcon: Icon(Icons.category_outlined),
-              ),
-              items: _tematicas
-                  .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
-                  .toList(),
-              onChanged: _guardando
-                  ? null
-                  : (v) {
-                      if (v != null) setState(() => _tematica = v);
-                    },
-            ),
-            const SizedBox(height: 12),
-            
-            // --- CALENDARIO INICIO Y FIN (MEJORADO VISUALMENTE) ---
-            Text('Event Schedule *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: _guardando ? null : () => _selectDateTime(isStart: true),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  border: Border.all(color: _fechasInvalidas ? AppColors.error : Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(8),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _tituloCtrl,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Title *',
+                  prefixIcon: Icon(Icons.title_rounded),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.calendar_month_rounded, size: 20, color: _startDate == null ? Colors.grey : AppColors.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Start: ${_formatDateTime(_startDate, _startTime)}',
-                        style: TextStyle(color: _startDate == null ? Colors.grey.shade600 : AppColors.textPrimary),
-                      ),
-                    ),
-                  ],
-                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Required field';
+                  if (!RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(v.trim())) {
+                    return 'Must include at least one letter';
+                  }
+                  return null;
+                },
               ),
-            ),
-            const SizedBox(height: 8),
-            InkWell(
-              onTap: _guardando ? null : () => _selectDateTime(isStart: false),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                decoration: BoxDecoration(
-                  border: Border.all(color: _fechasInvalidas ? AppColors.error : Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descripcionCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Description *',
+                  prefixIcon: Icon(Icons.notes_rounded),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.event_available_rounded, size: 20, color: _endDate == null ? Colors.grey : AppColors.primary),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'End: ${_formatDateTime(_endDate, _endTime)}',
-                        style: TextStyle(color: _endDate == null ? Colors.grey.shade600 : AppColors.textPrimary),
-                      ),
-                    ),
-                  ],
-                ),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required field' : null,
               ),
-            ),
-            const SizedBox(height: 12),
-            // --------------------------------------------------------
-
-            TextField(
-              controller: _cupoCtrl,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Max Participants *',
-                prefixIcon: const Icon(Icons.groups_2_outlined),
-                errorText: _cupoInvalido ? 'Must be > 0' : null,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start, 
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _latCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                    decoration: InputDecoration(
-                      labelText: 'Latitude *',
-                      hintText: 'e.g. 28.1248',
-                      prefixIcon: const Icon(Icons.place_outlined),
-                      errorText: _latInvalida ? 'Invalid' : null,
-                    ),
-                  ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _tematica,
+                decoration: const InputDecoration(
+                  labelText: 'Category *',
+                  prefixIcon: Icon(Icons.category_outlined),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _lonCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                    decoration: InputDecoration(
-                      labelText: 'Longitude *',
-                      hintText: 'e.g. -15.43',
-                      prefixIcon: const Icon(Icons.explore_outlined),
-                      errorText: _lonInvalida ? 'Invalid' : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                title: const Text('Verified Event', style: AppTextStyles.labelLarge),
-                subtitle: const Text('Event validated by organization.', style: AppTextStyles.bodyMedium),
-                value: _esVerificado,
+                items: _tematicas
+                    .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
+                    .toList(),
                 onChanged: _guardando
                     ? null
-                    : (v) => setState(() => _esVerificado = v),
+                    : (v) {
+                        if (v != null) setState(() => _tematica = v);
+                      },
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              
+              Text('Event Schedule *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: 8),
+              DateTimePicker(
+                label: 'Start (Min: Now)',
+                value: _fechaInicio,
+                onPicked: (dt) {
+                  setState(() {
+                    _fechaInicio = dt;
+                    if (_fechaFin == null || _fechaFin!.isBefore(dt)) {
+                      _fechaFin = dt.add(const Duration(hours: 2));
+                    }
+                  });
+                },
+                onCleared: () => setState(() => _fechaInicio = null),
+              ),
+              const SizedBox(height: 8),
+              DateTimePicker(
+                label: 'End',
+                value: _fechaFin,
+                onPicked: (dt) => setState(() => _fechaFin = dt),
+                onCleared: () => setState(() => _fechaFin = null),
+              ),
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _cupoCtrl,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Max Participants *',
+                  prefixIcon: Icon(Icons.groups_2_outlined),
+                ),
+                validator: (v) {
+                  final n = int.tryParse(v?.trim() ?? '');
+                  if (n == null || n <= 0) return 'Must be > 0';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start, 
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _latCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Latitude *',
+                        hintText: 'e.g. 28.1248',
+                        prefixIcon: Icon(Icons.place_outlined),
+                      ),
+                      validator: (v) {
+                        final val = double.tryParse(v?.trim().replaceAll(',', '.') ?? '');
+                        if (val == null || val < -90 || val > 90) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _lonCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      decoration: const InputDecoration(
+                        labelText: 'Longitude *',
+                        hintText: 'e.g. -15.43',
+                        prefixIcon: Icon(Icons.explore_outlined),
+                      ),
+                      validator: (v) {
+                        final val = double.tryParse(v?.trim().replaceAll(',', '.') ?? '');
+                        if (val == null || val < -180 || val > 180) return 'Invalid';
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                child: SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                  title: const Text('Verified Event', style: AppTextStyles.labelLarge),
+                  subtitle: const Text('Event validated by organization.', style: AppTextStyles.bodyMedium),
+                  value: _esVerificado,
+                  onChanged: _guardando
+                      ? null
+                      : (v) => setState(() => _esVerificado = v),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 24, top: 0),

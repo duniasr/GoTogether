@@ -4,6 +4,7 @@ import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
 import 'home/widgets/create_event_dialog.dart';
 import '../utils/translations.dart';
+import '../widgets/date_time_picker.dart';
 import 'home/widgets/event_card.dart';
 
 class MisPlanesScreen extends StatefulWidget {
@@ -320,6 +321,20 @@ class _EditDialogState extends State<_EditDialog> {
   Future<void> _guardar() async {
     if (!_formKey.currentState!.validate()) return;
 
+    if (_fechaInicio == null || _fechaFin == null) {
+      widget.messenger.showSnackBar(
+        const SnackBar(content: Text('Please select both start and end dates.')),
+      );
+      return;
+    }
+
+    if (_fechaFin!.isBefore(_fechaInicio!) || _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
+      widget.messenger.showSnackBar(
+        const SnackBar(content: Text('End date must be after start date.')),
+      );
+      return;
+    }
+
     final cupo = int.parse(_cupo.text.trim());
     setState(() => _guardando = true);
     try {
@@ -409,16 +424,23 @@ class _EditDialogState extends State<_EditDialog> {
               ),
               // Fecha de inicio
               const SizedBox(height: AppSpacing.md),
-              _DateTimePicker(
+              DateTimePicker(
                 label: 'Start',
                 value: _fechaInicio,
-                onPicked: (dt) => setState(() => _fechaInicio = dt),
+                onPicked: (dt) {
+                  setState(() {
+                    _fechaInicio = dt;
+                    if (_fechaFin == null || _fechaFin!.isBefore(dt)) {
+                      _fechaFin = dt.add(const Duration(hours: 2));
+                    }
+                  });
+                },
                 onCleared: () => setState(() => _fechaInicio = null),
               ),
 
               // Fecha de fin
               const SizedBox(height: AppSpacing.md),
-              _DateTimePicker(
+              DateTimePicker(
                 label: 'End',
                 value: _fechaFin,
                 onPicked: (dt) => setState(() => _fechaFin = dt),
@@ -456,83 +478,6 @@ class _EditDialogState extends State<_EditDialog> {
               : const Text('Update'),
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-//  Picker reutilizable de fecha + hora
-// ─────────────────────────────────────────────
-class _DateTimePicker extends StatefulWidget {
-  final String label;
-  final DateTime? value;
-  final ValueChanged<DateTime> onPicked;
-  final VoidCallback onCleared;
-
-  const _DateTimePicker({
-    required this.label,
-    required this.value,
-    required this.onPicked,
-    required this.onCleared,
-  });
-
-  @override
-  State<_DateTimePicker> createState() => _DateTimePickerState();
-}
-
-class _DateTimePickerState extends State<_DateTimePicker> {
-  static String _fmt(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}  '
-      '${dt.hour.toString().padLeft(2, '0')}:'
-      '${dt.minute.toString().padLeft(2, '0')}';
-
-  Future<void> _pick() async {
-    final hoy = DateTime.now();
-    final fecha = await showDatePicker(
-      context: context,
-      initialDate: widget.value ?? hoy,
-      firstDate: DateTime(hoy.year - 1),
-      lastDate: DateTime(hoy.year + 5),
-    );
-    if (fecha == null || !mounted) return;
-
-    final hora = await showTimePicker(
-      context: context,
-      initialTime: widget.value != null
-          ? TimeOfDay.fromDateTime(widget.value!)
-          : TimeOfDay.now(),
-    );
-    if (hora == null || !mounted) return;
-
-    widget.onPicked(DateTime(
-        fecha.year, fecha.month, fecha.day, hora.hour, hora.minute));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      onTap: _pick,
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: '${widget.label} Date',
-          prefixIcon: const Icon(Icons.calendar_today_outlined),
-          suffixIcon: widget.value != null
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
-                  onPressed: widget.onCleared,
-                )
-              : null,
-        ),
-        child: Text(
-          widget.value != null ? _fmt(widget.value!) : 'No date',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: widget.value != null ? null : AppColors.textHint,
-          ),
-        ),
-      ),
     );
   }
 }
