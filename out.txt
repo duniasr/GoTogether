@@ -1,0 +1,9 @@
+Analyzing profile_screen.dart...
+
+  error - profile_screen.dart:256:51 - The method 'fetchSignInMethodsForEmail' isn't defined for the type 'FirebaseAuth'. Try correcting the name to the name of an existing method, or defining a method named 'fetchSignInMethodsForEmail'. - undefined_method
+   info - profile_screen.dart:472:94 - Empty catch block. Try adding statements to the block, adding a comment to the block, or removing the 'catch' clause. - empty_catches
+   info - profile_screen.dart:480:38 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - profile_screen.dart:482:46 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+   info - profile_screen.dart:487:44 - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check. Guard a 'State.context' use with a 'mounted' check on the State, and other BuildContext use with a 'mounted' check on the BuildContext. - use_build_context_synchronously
+
+5 issues found.
