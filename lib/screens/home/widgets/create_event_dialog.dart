@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // Recuerda tener esto en pubspec.yaml
 import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
+import '../../../utils/translations.dart';
 
 /// Muestra el diálogo de creación de evento usando un StatefulWidget
 /// para garantizar el ciclo de vida correcto de los TextEditingController.
@@ -263,7 +264,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 prefixIcon: Icon(Icons.category_outlined),
               ),
               items: _tematicas
-                  .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                  .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
                   .toList(),
               onChanged: _guardando
                   ? null

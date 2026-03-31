@@ -33,8 +33,8 @@ class _MapScreenState extends State<MapScreen> {
             markerId: MarkerId('marcador_prueba'),
             position: LatLng(28.1350, -15.4320), // Por la zona de Las Canteras
             infoWindow: InfoWindow(
-              title: '¡Tu primer pin!',
-              snippet: 'El mapa funciona perfectamente.',
+              title: 'Your first pin!',
+              snippet: 'The map works perfectly.',
             ),
           ),
         },

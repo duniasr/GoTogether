@@ -3,6 +3,7 @@ import '../app_theme.dart';
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
 import 'home/widgets/create_event_dialog.dart';
+import '../utils/translations.dart';
 
 class MisPlanesScreen extends StatefulWidget {
   const MisPlanesScreen({super.key});
@@ -40,7 +41,7 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
             foregroundColor: Colors.white,
             icon: const Icon(Icons.add_rounded, size: 22),
             label: Text(
-              'Crear plan',
+              'Create Plan',
               style: AppTextStyles.button.copyWith(color: Colors.white),
             ),
             shape: RoundedRectangleBorder(
@@ -56,15 +57,15 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.md, AppSpacing.lg, AppSpacing.md, 0),
-                child: Text('Mis Planes', style: AppTextStyles.displayMedium),
+                child: Text('My Plans', style: AppTextStyles.displayMedium),
               ),
               const TabBar(
                 indicatorColor: AppColors.primary,
                 labelColor: AppColors.primary,
                 unselectedLabelColor: AppColors.textSecondary,
                 tabs: [
-                  Tab(text: 'Creados'),
-                  Tab(text: 'Me uno'),
+                  Tab(text: 'Created'),
+                  Tab(text: 'Joined'),
                 ],
               ),
               Expanded(
@@ -74,13 +75,13 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
                       stream: _creadosStream,
                       service: _service,
                       esCreador: true,
-                      textoVacio: 'No has creado ningún plan aún',
+                      textoVacio: 'You haven\'t created any plans yet',
                     ),
                     _PlanesTab(
                       stream: _unidosStream,
                       service: _service,
                       esCreador: false,
-                      textoVacio: 'No te has unido a ningún plan',
+                      textoVacio: 'You haven\'t joined any plans yet',
                     ),
                   ],
                 ),
@@ -193,19 +194,19 @@ class _MiPlanCardState extends State<_MiPlanCard> {
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.lg)),
-        title: const Text('Eliminar plan'),
+        title: const Text('Delete plan'),
         content: Text(
-          '¿Seguro que quieres eliminar "${widget.quedada.titulo}"?\nEsta acción no se puede deshacer.',
+          'Are you sure you want to delete "${widget.quedada.titulo}"?\nThis action cannot be undone.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.error),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Eliminar'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -217,7 +218,7 @@ class _MiPlanCardState extends State<_MiPlanCard> {
       await widget.service.eliminarQuedada(widget.quedada.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Plan eliminado.')),
+        const SnackBar(content: Text('Plan deleted.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -233,7 +234,7 @@ class _MiPlanCardState extends State<_MiPlanCard> {
       await widget.service.abandonarQuedada(widget.quedada.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Has abandonado el plan.')),
+        const SnackBar(content: Text('You have left the plan.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -277,7 +278,7 @@ class _MiPlanCardState extends State<_MiPlanCard> {
             children: [
               Expanded(
                 child: Text(
-                  q.titulo.isEmpty ? 'Sin título' : q.titulo,
+                  q.titulo.isEmpty ? 'No title' : q.titulo,
                   style: AppTextStyles.headlineSmall,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -313,7 +314,7 @@ class _MiPlanCardState extends State<_MiPlanCard> {
                   color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
-                child: Text(_cap(q.estado), style: AppTextStyles.labelSmall),
+                child: Text(translateStatus(q.estado), style: AppTextStyles.labelSmall),
               ),
             ],
           ),
@@ -350,14 +351,14 @@ class _MiPlanCardState extends State<_MiPlanCard> {
             children: [
               Text(
                 spots > 0
-                    ? '$spots ${spots == 1 ? 'plaza libre' : 'plazas libres'}'
-                    : 'Sin plazas',
+                    ? '$spots ${spots == 1 ? 'spot left' : 'spots left'}'
+                    : 'No spots left',
                 style: AppTextStyles.labelSmall.copyWith(
                   color: almostFull ? AppColors.error : AppColors.textSecondary,
                   fontWeight: almostFull ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
-              Text('$maxSpots máx.', style: AppTextStyles.labelSmall),
+              Text('Max $maxSpots', style: AppTextStyles.labelSmall),
             ],
           ),
           const SizedBox(height: 6),
@@ -390,7 +391,7 @@ class _MiPlanCardState extends State<_MiPlanCard> {
                 elevation: 0,
               ),
               child: Text(
-                widget.esCreador ? 'Modificar' : 'Abandonar',
+                widget.esCreador ? 'Modify' : 'Leave',
                 style: AppTextStyles.button.copyWith(
                   color: widget.esCreador ? Colors.white : AppColors.error,
                 ),
@@ -483,7 +484,7 @@ class _EditDialogState extends State<_EditDialog> {
       if (!mounted) return;
       Navigator.pop(context);
       widget.messenger.showSnackBar(
-        const SnackBar(content: Text('Plan actualizado.')),
+        const SnackBar(content: Text('Plan updated.')),
       );
     } catch (_) {
       if (mounted) setState(() => _guardando = false);
@@ -496,7 +497,7 @@ class _EditDialogState extends State<_EditDialog> {
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg)),
-      title: const Text('Editar plan', style: AppTextStyles.headlineMedium),
+      title: const Text('Edit plan', style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -507,11 +508,11 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _titulo,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Título'),
+                decoration: const InputDecoration(labelText: 'Title'),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'El título no puede estar vacío';
+                  if (v == null || v.trim().isEmpty) return 'Title cannot be empty';
                   if (!RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(v.trim())) {
-                    return 'Debe incluir al menos una letra';
+                    return 'Must include at least one letter';
                   }
                   return null;
                 },
@@ -522,18 +523,18 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _descripcion,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Descripción'),
+                decoration: const InputDecoration(labelText: 'Description'),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'La descripción no puede estar vacía' : null,
+                    (v == null || v.trim().isEmpty) ? 'Description cannot be empty' : null,
               ),
               const SizedBox(height: AppSpacing.md),
 
               // Temática (dropdown, siempre válido)
               DropdownButtonFormField<String>(
                 value: _tematica,
-                decoration: const InputDecoration(labelText: 'Temática'),
+                decoration: const InputDecoration(labelText: 'Category'),
                 items: _tematicas
-                    .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                    .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
                     .toList(),
                 onChanged: (v) { if (v != null) setState(() => _tematica = v); },
               ),
@@ -543,13 +544,13 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _cupo,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Cupo máximo'),
+                decoration: const InputDecoration(labelText: 'Max participants'),
                 validator: (v) {
                   final n = int.tryParse(v?.trim() ?? '');
-                  if (n == null) return 'Introduce un número válido';
-                  if (n <= 0) return 'El cupo debe ser mayor que 0';
+                  if (n == null) return 'Enter a valid number';
+                  if (n <= 0) return 'Capacity must be greater than 0';
                   if (n < _asistentesActuales) {
-                    return 'Mínimo $_asistentesActuales (personas ya apuntadas)';
+                    return 'Minimum $_asistentesActuales (people already joined)';
                   }
                   return null;
                 },
@@ -557,7 +558,7 @@ class _EditDialogState extends State<_EditDialog> {
               // Fecha de inicio
               const SizedBox(height: AppSpacing.md),
               _DateTimePicker(
-                label: 'Inicio',
+                label: 'Start',
                 value: _fechaInicio,
                 onPicked: (dt) => setState(() => _fechaInicio = dt),
                 onCleared: () => setState(() => _fechaInicio = null),
@@ -566,7 +567,7 @@ class _EditDialogState extends State<_EditDialog> {
               // Fecha de fin
               const SizedBox(height: AppSpacing.md),
               _DateTimePicker(
-                label: 'Fin',
+                label: 'End',
                 value: _fechaFin,
                 onPicked: (dt) => setState(() => _fechaFin = dt),
                 onCleared: () => setState(() => _fechaFin = null),
@@ -576,11 +577,11 @@ class _EditDialogState extends State<_EditDialog> {
               // Estado
               DropdownButtonFormField<String>(
                 value: _estado,
-                decoration: const InputDecoration(labelText: 'Estado'),
+                decoration: const InputDecoration(labelText: 'Status'),
                 items: _estados
                     .map((e) => DropdownMenuItem(
                           value: e,
-                          child: Text(e[0].toUpperCase() + e.substring(1)),
+                          child: Text(translateStatus(e)),
                         ))
                     .toList(),
                 onChanged: (v) { if (v != null) setState(() => _estado = v); },
@@ -592,7 +593,7 @@ class _EditDialogState extends State<_EditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _guardando ? null : _guardar,
@@ -600,7 +601,7 @@ class _EditDialogState extends State<_EditDialog> {
               ? const SizedBox(width: 16, height: 16,
                   child: CircularProgressIndicator(
                       color: Colors.white, strokeWidth: 2))
-              : const Text('Guardar'),
+              : const Text('Update'),
         ),
       ],
     );
@@ -664,7 +665,7 @@ class _DateTimePickerState extends State<_DateTimePicker> {
       onTap: _pick,
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: 'Fecha ${widget.label}',
+          labelText: '${widget.label} Date',
           prefixIcon: const Icon(Icons.calendar_today_outlined),
           suffixIcon: widget.value != null
               ? IconButton(
@@ -674,7 +675,7 @@ class _DateTimePickerState extends State<_DateTimePicker> {
               : null,
         ),
         child: Text(
-          widget.value != null ? _fmt(widget.value!) : 'Sin fecha',
+          widget.value != null ? _fmt(widget.value!) : 'No date',
           style: AppTextStyles.bodyMedium.copyWith(
             color: widget.value != null ? null : AppColors.textHint,
           ),

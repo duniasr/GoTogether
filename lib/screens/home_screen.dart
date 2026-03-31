@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 foregroundColor: Colors.white,
                 icon: const Icon(Icons.add_rounded, size: 22),
                 label: Text(
-                  'Crear plan',
+                  'Create Plan',
                   style: AppTextStyles.button.copyWith(color: Colors.white),
                 ),
                 shape: RoundedRectangleBorder(
@@ -123,22 +123,22 @@ class _HomeScreenState extends State<HomeScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
             activeIcon: Icon(Icons.explore_rounded),
-            label: 'Explorar',
+            label: 'Explore',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map_outlined),
             activeIcon: Icon(Icons.map_rounded),
-            label: 'Mapa',
+            label: 'Map',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.event_note_outlined),
             activeIcon: Icon(Icons.event_note_rounded),
-            label: 'Mis planes',
+            label: 'My Plans',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline_rounded),
             activeIcon: Icon(Icons.person_rounded),
-            label: 'Perfil',
+            label: 'Profile',
           ),
         ],
       ),

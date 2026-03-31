@@ -4,6 +4,7 @@ import '../../../models/quedada.dart';
 import '../../../services/quedadas_service.dart';
 import 'category_filter.dart';
 import 'event_card.dart';
+import '../../../utils/translations.dart';
 
 class ExploreTab extends StatelessWidget {
   final QuedadasService service;
@@ -29,7 +30,7 @@ class ExploreTab extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
-                'Error cargando los planes: ${snapshot.error}',
+                'Error loading plans: ${snapshot.error}',
                 style: AppTextStyles.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -73,13 +74,13 @@ class ExploreTab extends StatelessWidget {
                   children: [
                     Text(
                       selectedCategory == 'Todos'
-                          ? 'Planes cercanos'
-                          : selectedCategory,
+                          ? 'Nearby Plans'
+                          : translateCategory(selectedCategory),
                       style: AppTextStyles.headlineMedium,
                     ),
                     if (!isLoading)
                       Text(
-                        '${filtered.length} planes',
+                        '${filtered.length} plans',
                         style: AppTextStyles.bodyMedium,
                       ),
                   ],
@@ -152,7 +153,7 @@ class ExploreTab extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'No hay planes de esta categoría',
+            'No plans in this category',
             style: AppTextStyles.headlineSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -160,7 +161,7 @@ class ExploreTab extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Sé el primero en crear uno.',
+            'Be the first to create one.',
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),

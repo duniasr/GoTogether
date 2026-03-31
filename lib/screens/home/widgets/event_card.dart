@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../services/quedadas_service.dart';
+import '../../../utils/translations.dart';
 
 class EventCard extends StatefulWidget {
   final Quedada quedada;
@@ -29,17 +30,17 @@ class _EventCardState extends State<EventCard> {
     final confirmar = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Eliminar evento'),
-            content: Text('¿Seguro que quieres eliminar "${widget.quedada.titulo}"?'),
+            title: const Text('Delete event'),
+            content: Text('Are you sure you want to delete "${widget.quedada.titulo}"?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancelar'),
+                child: const Text('Cancel'),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: AppColors.error),
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Eliminar'),
+                child: const Text('Delete'),
               ),
             ],
           ),
@@ -52,12 +53,12 @@ class _EventCardState extends State<EventCard> {
       await widget.service.eliminarQuedada(widget.quedada.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evento eliminado.')),
+        const SnackBar(content: Text('Event deleted.')),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al eliminar: $e')),
+        SnackBar(content: Text('Error deleting: $e')),
       );
     }
   }
@@ -87,7 +88,7 @@ class _EventCardState extends State<EventCard> {
             children: [
               Expanded(
                 child: Text(
-                  quedada.titulo.isEmpty ? 'Sin título' : quedada.titulo,
+                  quedada.titulo.isEmpty ? 'No title' : quedada.titulo,
                   style: AppTextStyles.headlineSmall,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -131,7 +132,7 @@ class _EventCardState extends State<EventCard> {
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
                 child: Text(
-                  _capitalizar(quedada.estado),
+                  translateStatus(quedada.estado),
                   style: AppTextStyles.labelSmall,
                 ),
               ),
@@ -190,14 +191,14 @@ class _EventCardState extends State<EventCard> {
             children: [
               Text(
                 spots > 0
-                    ? '$spots ${spots == 1 ? 'plaza libre' : 'plazas libres'}'
-                    : 'Sin plazas',
+                    ? '$spots ${spots == 1 ? 'spot left' : 'spots left'}'
+                    : 'No spots left',
                 style: AppTextStyles.labelSmall.copyWith(
                   color: almostFull ? AppColors.error : AppColors.textSecondary,
                   fontWeight: almostFull ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
-              Text('$maxSpots máx.', style: AppTextStyles.labelSmall),
+              Text('Max $maxSpots', style: AppTextStyles.labelSmall),
             ],
           ),
           const SizedBox(height: 6),
@@ -230,7 +231,7 @@ class _EventCardState extends State<EventCard> {
                 elevation: 0,
               ),
               child: Text(
-                spots > 0 ? 'Unirme' : 'Completo',
+                spots > 0 ? 'Join' : 'Full',
                 style: AppTextStyles.button.copyWith(
                   color: spots > 0 ? Colors.white : AppColors.textHint,
                 ),

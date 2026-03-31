@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'utils/translations.dart';
 
 // ─────────────────────────────────────────────
 //  GoTogether — Design System
@@ -394,7 +395,7 @@ class CategoryChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         child: Text(
-          category,
+          translateCategory(category),
           style: AppTextStyles.labelSmall.copyWith(
             color: selected ? Colors.white : color,
             fontWeight: FontWeight.w600,

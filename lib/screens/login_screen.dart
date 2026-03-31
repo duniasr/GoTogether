@@ -17,7 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(_isLogin ? "GoTogether - Acceso" : "GoTogether - Registro"),
+        title: Text(_isLogin ? "GoTogether - Login" : "GoTogether - Register"),
         centerTitle: true,
       ),
       body: SafeArea(

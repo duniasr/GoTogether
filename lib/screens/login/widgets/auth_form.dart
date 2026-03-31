@@ -95,7 +95,7 @@ class _AuthFormState extends State<AuthForm> {
       if (widget.isLogin) {
         final query = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).limit(1).get();
         if (query.docs.isEmpty) {
-          setState(() { _backendEmailError = "Email inválido"; });
+          setState(() { _backendEmailError = "Invalid email"; });
           _formKey.currentState!.validate();
           setState(() { _isLoading = false; });
           return;
@@ -129,15 +129,15 @@ class _AuthFormState extends State<AuthForm> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'user-not-found') {
-          _backendEmailError = "Email inválido";
+          _backendEmailError = "Invalid email";
         } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-          _backendPasswordError = "Contraseña incorrecta";
+          _backendPasswordError = "Incorrect password";
         } else if (e.code == 'invalid-email') {
-          _backendEmailError = "Email inválido";
+          _backendEmailError = "Invalid email";
         } else if (e.code == 'email-already-in-use') {
-          _backendEmailError = "Ese email ya está registrado";
+          _backendEmailError = "Email already registered";
         } else {
-          _showError("Ocurrió un error: ${e.message}");
+          _showError("An error occurred: ${e.message}");
         }
       });
       _formKey.currentState!.validate();
@@ -175,12 +175,12 @@ class _AuthFormState extends State<AuthForm> {
                 child: TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: "Tu Nombre",
+                    labelText: "Your Name",
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
                     if (!widget.isLogin && (value == null || value.trim().isEmpty)) {
-                      return "El nombre es obligatorio";
+                      return "Name is required";
                     }
                     return null;
                   },
@@ -208,10 +208,10 @@ class _AuthFormState extends State<AuthForm> {
                   return _backendEmailError;
                 }
                 if (value == null || value.trim().isEmpty) {
-                  return "El email es obligatorio";
+                  return "Email is required";
                 }
                 if (!_isValidEmail(value.trim())) {
-                  return "Formato inválido";
+                  return "Invalid format";
                 }
                 return null;
               },
@@ -222,7 +222,7 @@ class _AuthFormState extends State<AuthForm> {
               controller: _passwordController,
               obscureText: true,
               decoration: const InputDecoration(
-                labelText: "Contraseña",
+                labelText: "Password",
                 prefixIcon: Icon(Icons.lock),
               ),
               onChanged: (value) {
@@ -236,10 +236,10 @@ class _AuthFormState extends State<AuthForm> {
                   return _backendPasswordError;
                 }
                 if (value == null || value.isEmpty) {
-                  return "La contraseña es obligatoria";
+                  return "Password is required";
                 }
                 if (!widget.isLogin && value.length < 6) {
-                  return "La contraseña debe tener al menos 6 caracteres";
+                  return "Password must be at least 6 characters";
                 }
                 return null;
               },
@@ -253,16 +253,16 @@ class _AuthFormState extends State<AuthForm> {
                   controller: _confirmPasswordController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: "Confirmar Contraseña",
+                    labelText: "Confirm Password",
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   validator: (value) {
                     if (!widget.isLogin) {
                       if (value == null || value.isEmpty) {
-                        return "Confirma tu contraseña";
+                        return "Confirm your password";
                       }
                       if (value != _passwordController.text) {
-                        return "Las contraseñas no coinciden";
+                        return "Passwords do not match";
                       }
                     }
                     return null;
@@ -283,7 +283,7 @@ class _AuthFormState extends State<AuthForm> {
                       boxShadow: AppShadows.card,
                     ),
                     child: SwitchListTile(
-                      title: const Text("Soy Organizador Verificado", style: AppTextStyles.labelLarge),
+                      title: const Text("I am a Verified Organizer", style: AppTextStyles.labelLarge),
                       value: _isVerifiedOrganizer,
                       activeColor: AppColors.primary,
                       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -299,12 +299,12 @@ class _AuthFormState extends State<AuthForm> {
                         TextFormField(
                           controller: _companyNameController,
                           decoration: const InputDecoration(
-                            labelText: "Nombre de la Empresa", 
+                            labelText: "Company Name", 
                             prefixIcon: Icon(Icons.business),
                           ),
                           validator: (value) {
                             if (_isVerifiedOrganizer && (value == null || value.trim().isEmpty)) {
-                              return "El nombre de la empresa es obligatorio";
+                              return "Company name is required";
                             }
                             return null;
                           },
@@ -313,12 +313,12 @@ class _AuthFormState extends State<AuthForm> {
                         TextFormField(
                           controller: _cifController,
                           decoration: const InputDecoration(
-                            labelText: "CIF / NIF", 
+                            labelText: "VAT Number", 
                             prefixIcon: Icon(Icons.badge),
                           ),
                           validator: (value) {
                             if (_isVerifiedOrganizer && (value == null || value.trim().isEmpty)) {
-                              return "El CIF/NIF es obligatorio";
+                              return "VAT number is required";
                             }
                             return null;
                           },
@@ -332,7 +332,7 @@ class _AuthFormState extends State<AuthForm> {
             const SizedBox(height: AppSpacing.md),
 
             AppPrimaryButton(
-              label: widget.isLogin ? "Iniciar Sesión" : "Registrarse",
+              label: widget.isLogin ? "Login" : "Register",
               isLoading: _isLoading,
               onPressed: _submit,
             ),
@@ -342,7 +342,7 @@ class _AuthFormState extends State<AuthForm> {
             TextButton(
               onPressed: widget.onToggleMode,
               child: Text(
-                widget.isLogin ? "¿No tienes cuenta? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión",
+                widget.isLogin ? "Don't have an account? Register here" : "Already have an account? Login here",
               ),
             ),
           ],
