@@ -30,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isChangingPassword = false;
   String? _passwordAuthErrorForPwd;
   String? _passwordAuthErrorForEmail;
+  String? _emailBackendError;
 
   bool _obscurePwdEmail = true;
   bool _obscureCurrentPwd = true;
