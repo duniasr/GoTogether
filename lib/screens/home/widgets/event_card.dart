@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../services/quedadas_service.dart';
@@ -132,6 +133,22 @@ class _EventCardState extends State<EventCard> {
                 child: Text(
                   _capitalizar(quedada.estado),
                   style: AppTextStyles.labelSmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // --- MOSTRAR FECHAS ---
+          Row(
+            children: [
+              const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${DateFormat('dd MMM yyyy, HH:mm').format(quedada.fechaInicio)} - ${DateFormat('HH:mm').format(quedada.fechaFin)}',
+                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],

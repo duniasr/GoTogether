@@ -145,10 +145,12 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
           if (isStart) {
             _startDate = pickedDate;
             _startTime = pickedTime;
-            // Auto-ajustar fin si es anterior al inicio
+            // Auto-ajustar fin si no hay o es anterior al inicio
             if (!_fechasLogicas()) {
-              _endDate = null;
-              _endTime = null;
+              final startDT = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime.hour, pickedTime.minute);
+              final autoEndDT = startDT.add(const Duration(hours: 2));
+              _endDate = DateTime(autoEndDT.year, autoEndDT.month, autoEndDT.day);
+              _endTime = TimeOfDay(hour: autoEndDT.hour, minute: autoEndDT.minute);
             }
           } else {
             _endDate = pickedDate;
@@ -189,8 +191,8 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     });
 
     try {
-      // final startTimestamp = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
-      // final endTimestamp = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
+      final startTimestamp = DateTime(_startDate!.year, _startDate!.month, _startDate!.day, _startTime!.hour, _startTime!.minute);
+      final endTimestamp = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, _endTime!.hour, _endTime!.minute);
 
       await widget.service.crearQuedada(
         titulo: titulo,
@@ -202,6 +204,8 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         longitud: lon!,
         estado: 'abierta',
         esVerificado: _esVerificado,
+        fechaInicio: startTimestamp,
+        fechaFin: endTimestamp,
       );
 
       if (!mounted) return;
@@ -272,7 +276,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: _fechasInvalidas && _startDate == null ? AppColors.error : Colors.grey.shade400),
+                  border: Border.all(color: _fechasInvalidas ? AppColors.error : Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -296,7 +300,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: _fechasInvalidas && _endDate == null ? AppColors.error : Colors.grey.shade400),
+                  border: Border.all(color: _fechasInvalidas ? AppColors.error : Colors.grey.shade400),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(

@@ -40,6 +40,8 @@ class QuedadasService {
     required double longitud,
     required String estado,
     required bool esVerificado,
+    required DateTime fechaInicio,
+    required DateTime fechaFin,
   }) async {
     final usuario = _auth.currentUser;
     String organizadorFinal = organizador.trim();
@@ -73,11 +75,13 @@ class QuedadasService {
       descripcion: descripcion.trim(),
       esVerificado: esVerificado,
       estado: estado,
-      organizador: organizadorFinal, // <--- Ahora sí, guardamos "kiko"
+      organizador: organizadorFinal,
       plazasLibres: cupoMax,
       tematica: tematica,
       titulo: titulo.trim(),
       ubicacion: GeoPoint(latitud, longitud),
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin,
     );
 
     await _eventsRef.add(evento.toFirestore());

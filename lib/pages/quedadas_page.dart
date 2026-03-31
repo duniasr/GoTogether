@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
@@ -55,6 +56,8 @@ class _QuedadasPageState extends State<QuedadasPage> {
     String tematicaSeleccionada = _tematicas.first;
     String estadoSeleccionado = _estados.first;
     bool esVerificado = false;
+    DateTime fechaInicio = DateTime.now().add(const Duration(hours: 1));
+    DateTime fechaFin = DateTime.now().add(const Duration(hours: 3));
 
     await showDialog<void>(
       context: context,
@@ -188,6 +191,38 @@ class _QuedadasPageState extends State<QuedadasPage> {
                         });
                       },
                     ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Fecha de inicio'),
+                      subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(fechaInicio)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final picked = await _seleccionarFechaYHora(context, fechaInicio);
+                        if (picked != null) {
+                          setStateDialog(() {
+                            fechaInicio = picked;
+                            if (fechaFin.isBefore(fechaInicio)) {
+                              fechaFin = fechaInicio.add(const Duration(hours: 2));
+                            }
+                          });
+                        }
+                      },
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Fecha de finalización'),
+                      subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(fechaFin)),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final picked = await _seleccionarFechaYHora(context, fechaFin);
+                        if (picked != null) {
+                          setStateDialog(() {
+                            fechaFin = picked;
+                          });
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -236,6 +271,8 @@ class _QuedadasPageState extends State<QuedadasPage> {
                         longitud: longitud!,
                         estado: estadoSeleccionado,
                         esVerificado: esVerificado,
+                        fechaInicio: fechaInicio,
+                        fechaFin: fechaFin,
                       );
 
                       if (!context.mounted) {
@@ -275,6 +312,26 @@ class _QuedadasPageState extends State<QuedadasPage> {
     cupoController.dispose();
     latitudController.dispose();
     longitudController.dispose();
+  }
+
+  Future<DateTime?> _seleccionarFechaYHora(BuildContext context, DateTime inicial) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: inicial,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 5)),
+    );
+    if (date == null) return null;
+
+    if (!context.mounted) return null;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(inicial),
+    );
+    if (time == null) return null;
+
+    return DateTime(date.year, date.month, date.day, time.hour, time.minute);
   }
 
   Future<void> _eliminarQuedada(Quedada quedada) async {
@@ -415,6 +472,31 @@ class _QuedadasPageState extends State<QuedadasPage> {
                         Text(
                           'Ubicación: ${quedada.ubicacion.latitude.toStringAsFixed(5)}, '
                           '${quedada.ubicacion.longitude.toStringAsFixed(5)}',
+                        ),
+                        const Divider(),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time, size: 16),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Inicio: ${DateFormat('dd/MM/yyyy HH:mm').format(quedada.fechaInicio)}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time_filled, size: 16),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                'Fin: ${DateFormat('dd/MM/yyyy HH:mm').format(quedada.fechaFin)}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -14,6 +14,8 @@ class Quedada {
     required this.tematica,
     required this.titulo,
     required this.ubicacion,
+    required this.fechaInicio,
+    required this.fechaFin,
   });
 
   final String id;
@@ -28,10 +30,16 @@ class Quedada {
   final String tematica;
   final String titulo;
   final GeoPoint ubicacion;
+  final DateTime fechaInicio;
+  final DateTime fechaFin;
 
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final asistentesRaw = data['asistentesID'];
+
+    // Convertir Timestamps de Firestore a DateTime de Dart
+    final fechaInicioRaw = data['fechaInicio'];
+    final fechaFinRaw = data['fechaFin'];
 
     return Quedada(
       id: doc.id,
@@ -48,6 +56,12 @@ class Quedada {
       tematica: data['tematica'] as String? ?? 'Otros',
       titulo: data['titulo'] as String? ?? '',
       ubicacion: data['ubicacion'] as GeoPoint? ?? const GeoPoint(0, 0),
+      fechaInicio: fechaInicioRaw is Timestamp
+          ? fechaInicioRaw.toDate()
+          : DateTime.now(),
+      fechaFin: fechaFinRaw is Timestamp
+          ? fechaFinRaw.toDate()
+          : DateTime.now().add(const Duration(hours: 2)),
     );
   }
 
@@ -64,6 +78,8 @@ class Quedada {
       'tematica': tematica,
       'titulo': titulo,
       'ubicacion': ubicacion,
+      'fechaInicio': Timestamp.fromDate(fechaInicio),
+      'fechaFin': Timestamp.fromDate(fechaFin),
     };
   }
 }
