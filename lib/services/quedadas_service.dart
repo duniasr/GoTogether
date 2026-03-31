@@ -90,4 +90,87 @@ class QuedadasService {
   Future<void> eliminarQuedada(String eventoId) async {
     await _eventsRef.doc(eventoId).delete();
   }
+
+  /// Stream con los eventos cuyo campo [organizador] coincide con el
+  /// nombre guardado en Firestore para el usuario actual.
+  Stream<List<Quedada>> escucharMisQuedadas() {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return Stream.value([]);
+
+    // Primero obtenemos el nombre con un Future, luego abrimos el stream de Firestore.
+    return Stream.fromFuture(
+      _firestore
+          .collection('users')
+          .doc(usuario.uid)
+          .get()
+          .then<String>((doc) =>
+              doc.data()?['nombre'] as String? ??
+              usuario.displayName ??
+              'Anónimo')
+          .catchError((_) => usuario.displayName ?? 'Anónimo'),
+    ).asyncExpand(
+      (nombre) => _eventsRef
+          .where('organizador', isEqualTo: nombre)
+          .snapshots()
+          .map((snapshot) {
+        final eventos = snapshot.docs
+            .map(Quedada.fromFirestore)
+            .toList(growable: false);
+        eventos.sort(
+          (a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
+        );
+        return eventos;
+      }),
+    );
+  }
+
+  /// Actualiza los campos editables de un evento existente.
+  Future<void> actualizarQuedada({
+    required String eventoId,
+    required String titulo,
+    required String descripcion,
+    required String tematica,
+    required int cupoMax,
+    required String estado,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+  }) async {
+    await _eventsRef.doc(eventoId).update({
+      'titulo': titulo.trim(),
+      'descripcion': descripcion.trim(),
+      'tematica': tematica,
+      'cupoMax': cupoMax,
+      'estado': estado,
+      'fechaInicio': fechaInicio != null
+          ? Timestamp.fromDate(fechaInicio)
+          : FieldValue.delete(),
+      'fechaFin': fechaFin != null
+          ? Timestamp.fromDate(fechaFin)
+          : FieldValue.delete(),
+    });
+  }
+
+  /// Eventos en los que el usuario actual figura como asistente.
+  Stream<List<Quedada>> escucharQuedadasUnidas() {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return Stream.value([]);
+
+    return _eventsRef
+        .where('asistentesID', arrayContains: usuario.uid)
+        .snapshots()
+        .map((snap) {
+      final lista = snap.docs.map(Quedada.fromFirestore).toList(growable: false);
+      lista.sort((a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()));
+      return lista;
+    });
+  }
+  /// Elimina al usuario actual de la lista de asistentes y devuelve una plaza.
+  Future<void> abandonarQuedada(String eventoId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    await _eventsRef.doc(eventoId).update({
+      'asistentesID': FieldValue.arrayRemove([uid]),
+      'plazasLibres': FieldValue.increment(1),
+    });
+  }
 }

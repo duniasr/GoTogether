@@ -93,8 +93,14 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     super.dispose();
   }
 
-  // --- MÉTODOS DE VALIDACIÓN INDIVIDUAL ---
-  bool get _tituloInvalido => _intentado && _tituloCtrl.text.trim().isEmpty;
+  // --- MÉTODOS DE VALIDACIÓN INDIVIDUAL (Para poner los campos en rojo) ---
+  bool get _tituloInvalido {
+    if (!_intentado) return false;
+    final t = _tituloCtrl.text.trim();
+    if (t.isEmpty) return true;
+    // Debe contener al menos una letra (no solo números o símbolos)
+    return !RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(t);
+  }
   bool get _descInvalido => _intentado && _descripcionCtrl.text.trim().isEmpty;
   bool get _cupoInvalido {
     if (!_intentado) return false;

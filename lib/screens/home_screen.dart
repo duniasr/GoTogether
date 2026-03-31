@@ -3,6 +3,7 @@ import '../app_theme.dart';
 import '../services/quedadas_service.dart';
 import 'profile_screen.dart';
 import 'map_screen.dart'; 
+import 'mis_planes_screen.dart';
 import 'home/widgets/explore_tab.dart';
 import 'home/widgets/create_event_dialog.dart';
 
@@ -51,7 +52,9 @@ class _HomeScreenState extends State<HomeScreen> {
               )
             : _currentIndex == 1
                 ? const MapScreen()
-                : _buildPlaceholderTab(_currentIndex),
+                : _currentIndex == 2
+                    ? const MisPlanesScreen()
+                    : _buildPlaceholderTab(_currentIndex),
       ),
       floatingActionButton: _currentIndex == 0
           ? Container(
@@ -80,18 +83,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPlaceholderTab(int index) {
-    // Si el usuario toca el índice 3 (la 4ª pestaña, "Perfil")
+    // Índice 3 → Perfil
     if (index == 3) {
-      return const ProfileScreen(); // ¡Llamamos a tu pantalla!
+      return const ProfileScreen();
     }
 
-    // Para Mis planes (2), mostramos un texto de aviso
-    return Center(
-      child: Text(
-        'Próximamente...',
-        style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textHint),
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildBottomNav() {
