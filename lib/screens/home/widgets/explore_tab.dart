@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../services/quedadas_service.dart';
@@ -106,13 +107,73 @@ class ExploreTab extends StatelessWidget {
                 ),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: EventCard(
-                        quedada: filtered[index],
-                        service: service,
-                      ),
-                    ),
+                    (context, index) {
+                      final q = filtered[index];
+                      final isOrganizer = FirebaseAuth.instance.currentUser?.uid == q.organizador ||
+                                          FirebaseAuth.instance.currentUser?.email == q.organizador;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: EventCard(
+                          quedada: q,
+                          onDelete: isOrganizer ? () async {
+                            final confirmar = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Delete event'),
+                                content: Text('Are you sure you want to delete "${q.titulo}"?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            ) ?? false;
+
+                            if (!confirmar) return;
+                            try {
+                              await service.eliminarQuedada(q.id);
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Event deleted.')),
+                              );
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error deleting: $e')),
+                              );
+                            }
+                          } : null,
+                          actionButton: ElevatedButton(
+                            onPressed: q.plazasLibres > 0
+                                ? () {
+                                    // TODO: Implementar lógica de inscripción (HU-11)
+                                  }
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              disabledBackgroundColor: AppColors.surfaceAlt,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              q.plazasLibres > 0 ? 'Join' : 'Full',
+                              style: AppTextStyles.button.copyWith(
+                                color: q.plazasLibres > 0 ? Colors.white : AppColors.textHint,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                     childCount: filtered.length,
                   ),
                 ),
