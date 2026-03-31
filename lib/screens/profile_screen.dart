@@ -440,38 +440,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- LÓGICA DE BORRADO DE CUENTA ---
-  Future<void> _eliminarCuenta() async {
-    setState(() => _isLoading = true);
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      final db = FirebaseFirestore.instance;
-      final eventsRef = db.collection('events');
-      
-      final queryByUid = await eventsRef.where('organizador', isEqualTo: user.uid).get();
-      for (final doc in queryByUid.docs) {
-        await doc.reference.delete();
-      }
-
-      try { await db.collection('users').doc(user.uid).delete(); } catch (e) {}
-
-      await user.delete(); 
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cuenta eliminada.'), backgroundColor: AppColors.error));
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes volver a iniciar sesión para borrar la cuenta.'), backgroundColor: AppColors.error));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
 // --- LÓGICA DE BORRADO DE CUENTA (HU-03 CORREGIDA) ---
   void _showDeleteConfirmationDialog() {
@@ -524,12 +492,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       final db = FirebaseFirestore.instance;
 
-                      // 2. ACTUALIZAR ESTADO DE LOS EVENTOS DEL USUARIO
-                      // Buscamos por el nombre, ya que es lo que guarda ahora "organizador"
+                      // 2. BORRAR LOS EVENTOS DEL USUARIO
+                      // Buscamos por el nombre, ya que es lo que guarda "organizador"
                       final queryByName = await db.collection('events').where('organizador', isEqualTo: _nameController.text.trim()).get();
                       for (final doc in queryByName.docs) {
-                        // Cambiamos el estado a cancelada en lugar de borrarlo por completo
-                        await doc.reference.update({'estado': 'cancelada'});
+                        await doc.reference.delete();
                       }
 
                       // 3. BORRAR DOCUMENTO DE FIRESTORE
