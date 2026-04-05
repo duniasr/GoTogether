@@ -18,7 +18,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'Todos';
   int _currentIndex = 0;
 
-  // Servicio de quedadas conectado a Firebase
   final QuedadasService _service = QuedadasService();
 
   final List<String> _categories = [
@@ -83,7 +82,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPlaceholderTab(int index) {
-    // Índice 3 → Perfil
     if (index == 3) {
       return const ProfileScreen();
     }

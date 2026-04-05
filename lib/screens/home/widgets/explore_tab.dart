@@ -152,7 +152,7 @@ class ExploreTab extends StatelessWidget {
                           actionButton: ElevatedButton(
                             onPressed: q.plazasLibres > 0
                                 ? () {
-                                    // TODO: Implementar lógica de inscripción (HU-11)
+                                    
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(

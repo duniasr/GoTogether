@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Quedada {
+  // Constructor de la clase
   const Quedada({
     required this.id,
     required this.asistentesId,
@@ -33,11 +34,12 @@ class Quedada {
   final DateTime fechaInicio;
   final DateTime fechaFin;
 
+  // Método de fábrica para construir una Quedada a partir del JSON de Firestore
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final asistentesRaw = data['asistentesID'];
     
-    // Convertir Timestamps de Firestore a DateTime de Dart
+    // Control de errores básicos por si la base de datos devuelve valores nulos
     final fechaInicioRaw = data['fechaInicio'];
     final fechaFinRaw = data['fechaFin'];
 

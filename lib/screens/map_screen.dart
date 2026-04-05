@@ -11,7 +11,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   late GoogleMapController mapController;
 
-  // Coordenadas del centro de Las Palmas de Gran Canaria
+  // Definimos las coordenadas del centro de Las Palmas para iniciar el mapa
   final LatLng _centroLasPalmas = const LatLng(28.1248, -15.4300);
 
   void _onMapCreated(GoogleMapController controller) {
@@ -25,13 +25,12 @@ class _MapScreenState extends State<MapScreen> {
         onMapCreated: _onMapCreated,
         initialCameraPosition: CameraPosition(
           target: _centroLasPalmas,
-          zoom: 14.0, // Nivel de zoom inicial 
+          zoom: 14.0, // Nivel de acercamiento inicial
         ),
-        // Vamos a poner un pin de prueba para ver que funciona
         markers: {
           const Marker(
             markerId: MarkerId('marcador_prueba'),
-            position: LatLng(28.1350, -15.4320), // Por la zona de Las Canteras
+            position: LatLng(28.1350, -15.4320),
             infoWindow: InfoWindow(
               title: 'Your first pin!',
               snippet: 'The map works perfectly.',

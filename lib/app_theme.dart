@@ -1,58 +1,45 @@
 import 'package:flutter/material.dart';
 import 'utils/translations.dart';
 
-// ─────────────────────────────────────────────
-//  GoTogether — Design System
-//  Paleta: Azul profundo + Naranja vibrante
-//  Tipografía: Uso de Google Fonts (añadir
-//    google_fonts al pubspec.yaml)
-// ─────────────────────────────────────────────
-
 class AppColors {
   AppColors._();
 
-  // Primarios
-  static const Color primary = Color(0xFF1A6BFF); // Azul vibrante
+  static const Color primary = Color(0xFF1A6BFF);
   static const Color primaryDark = Color(
     0xFF0D4FCC,
-  ); // Azul oscuro (hover/press)
+  );
   static const Color primaryLight = Color(
     0xFFE8F0FF,
-  ); // Azul muy claro (fondos)
+  );
 
-  // Acento
-  static const Color accent = Color(0xFFFF7A1A); // Naranja energético
-  static const Color accentLight = Color(0xFFFFF0E6); // Naranja muy claro
+  static const Color accent = Color(0xFFFF7A1A);
+  static const Color accentLight = Color(0xFFFFF0E6);
 
-  // Neutros
-  static const Color background = Color(0xFFF7F9FC); // Gris muy suave
-  static const Color surface = Color(0xFFFFFFFF); // Blanco puro (tarjetas)
-  static const Color surfaceAlt = Color(0xFFEEF2F8); // Gris azulado suave
+  static const Color background = Color(0xFFF7F9FC);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceAlt = Color(0xFFEEF2F8);
 
-  // Texto
-  static const Color textPrimary = Color(0xFF0F1928); // Casi negro
-  static const Color textSecondary = Color(0xFF5A6B80); // Gris azulado medio
-  static const Color textHint = Color(0xFFABB8CC); // Gris claro
+  static const Color textPrimary = Color(0xFF0F1928);
+  static const Color textSecondary = Color(0xFF5A6B80);
+  static const Color textHint = Color(0xFFABB8CC);
 
-  // Semánticos
   static const Color success = Color(0xFF22C55E);
   static const Color error = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
 
-  // Categorías de eventos (chips de color)
   static const Map<String, Color> categoryColors = {
     'Fiesta': Color(0xFFEC4899),
     'Deporte': Color(0xFF10B981),
     'Cultura': Color(0xFF8B5CF6),
     'Gastronomía': Color(0xFFF59E0B),
-    'Naturaleza': Color(0xFF84CC16), // Verde agua
-    'Estudio': Color(0xFF3B82F6),    // Azul
-    'Ocio': Color(0xFFF43F5E),       // Rojo rosa
-    'Voluntariado': Color(0xFF14B8A6), // Cyan
-    'Viajes': Color(0xFF0EA5E9),     // Azul claro
-    'Videojuegos': Color(0xFF6366F1), // Azul índigo
-    'Música': Color(0xFFD946EF),     // Fucsia
-    'Networking': Color(0xFFEAB308), // Mostaza
+    'Naturaleza': Color(0xFF84CC16),
+    'Estudio': Color(0xFF3B82F6),
+    'Ocio': Color(0xFFF43F5E),
+    'Voluntariado': Color(0xFF14B8A6),
+    'Viajes': Color(0xFF0EA5E9),
+    'Videojuegos': Color(0xFF6366F1),
+    'Música': Color(0xFFD946EF),
+    'Networking': Color(0xFFEAB308),
     'Otros': Color(0xFF64748B),
   };
 }
@@ -60,7 +47,6 @@ class AppColors {
 class AppTextStyles {
   AppTextStyles._();
 
-  // Display — títulos grandes
   static const TextStyle displayLarge = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.w800,
@@ -77,7 +63,6 @@ class AppTextStyles {
     height: 1.2,
   );
 
-  // Headlines — secciones
   static const TextStyle headlineMedium = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w700,
@@ -91,7 +76,6 @@ class AppTextStyles {
     color: AppColors.textPrimary,
   );
 
-  // Body
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w400,
@@ -106,7 +90,6 @@ class AppTextStyles {
     height: 1.4,
   );
 
-  // Labels / Chips
   static const TextStyle labelLarge = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w600,
@@ -121,7 +104,6 @@ class AppTextStyles {
     letterSpacing: 0.3,
   );
 
-  // Botón
   static const TextStyle button = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w700,
@@ -175,9 +157,6 @@ class AppShadows {
   ];
 }
 
-// ─────────────────────────────────────────────
-//  ThemeData global para MaterialApp
-// ─────────────────────────────────────────────
 class AppTheme {
   AppTheme._();
 
@@ -194,7 +173,6 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: AppColors.background,
 
-    // AppBar
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.surface,
       foregroundColor: AppColors.textPrimary,
@@ -205,7 +183,6 @@ class AppTheme {
       centerTitle: false,
     ),
 
-    // Botones elevados
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.primary,
@@ -222,7 +199,6 @@ class AppTheme {
       ),
     ),
 
-    // Botones de texto
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
         foregroundColor: AppColors.primary,
@@ -230,7 +206,6 @@ class AppTheme {
       ),
     ),
 
-    // Inputs
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AppColors.surfaceAlt,
@@ -259,7 +234,6 @@ class AppTheme {
       prefixIconColor: AppColors.textSecondary,
     ),
 
-    // Chips
     chipTheme: ChipThemeData(
       backgroundColor: AppColors.surfaceAlt,
       selectedColor: AppColors.primaryLight,
@@ -274,7 +248,6 @@ class AppTheme {
       side: BorderSide.none,
     ),
 
-    // Divider
     dividerTheme: const DividerThemeData(
       color: Color(0xFFEBEFF5),
       thickness: 1,
@@ -283,11 +256,6 @@ class AppTheme {
   );
 }
 
-// ─────────────────────────────────────────────
-//  Widgets reutilizables
-// ─────────────────────────────────────────────
-
-/// Tarjeta con sombra suave estilo GoTogether
 class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -312,7 +280,6 @@ class AppCard extends StatelessWidget {
   }
 }
 
-/// Botón primario de ancho completo
 class AppPrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -366,7 +333,6 @@ class AppPrimaryButton extends StatelessWidget {
   }
 }
 
-/// Chip de categoría con color semántico
 class CategoryChip extends StatelessWidget {
   final String category;
   final bool selected;

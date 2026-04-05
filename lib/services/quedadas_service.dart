@@ -16,6 +16,7 @@ class QuedadasService {
   CollectionReference<Map<String, dynamic>> get _eventsRef =>
       _firestore.collection('events');
 
+  // Escucha todos los eventos de Firestore en tiempo real para mantener la lista actualizada
   Stream<List<Quedada>> escucharQuedadas() {
     return _eventsRef.snapshots().map((snapshot) {
       final eventos = snapshot.docs
@@ -46,17 +47,15 @@ class QuedadasService {
     final usuario = _auth.currentUser;
     String organizadorFinal = organizador.trim();
 
-    // --- LA MAGIA: Si el campo de la pantalla viene vacío, buscamos su NOMBRE real ---
     if (organizadorFinal.isEmpty) {
       if (usuario != null) {
         try {
-          // Buscamos en la colección 'users' a ver si tiene el nombre configurado
+          // Si no se pasó un nombre, buscamos si el usuario tiene un nombre guardado en la BD
           final userDoc = await _firestore.collection('users').doc(usuario.uid).get();
           
           if (userDoc.exists && userDoc.data()?['nombre'] != null && userDoc.data()!['nombre'].toString().trim().isNotEmpty) {
-            organizadorFinal = userDoc.data()!['nombre']; // Encontramos "kiko"
+            organizadorFinal = userDoc.data()!['nombre'];
           } else {
-            // Si no tiene nombre en la base de datos, usamos su displayName de Google o "Anónimo"
             organizadorFinal = usuario.displayName ?? 'Anónimo';
           }
         } catch (e) {
@@ -87,17 +86,16 @@ class QuedadasService {
     await _eventsRef.add(evento.toFirestore());
   }
 
+  // Borra un evento específico de la base de datos
   Future<void> eliminarQuedada(String eventoId) async {
     await _eventsRef.doc(eventoId).delete();
   }
 
-  /// Stream con los eventos cuyo campo [organizador] coincide con el
-  /// nombre guardado en Firestore para el usuario actual.
+  // Retorna únicamente los eventos creados por el usuario activo
   Stream<List<Quedada>> escucharMisQuedadas() {
     final usuario = _auth.currentUser;
     if (usuario == null) return Stream.value([]);
 
-    // Primero obtenemos el nombre con un Future, luego abrimos el stream de Firestore.
     return Stream.fromFuture(
       _firestore
           .collection('users')
@@ -124,7 +122,6 @@ class QuedadasService {
     );
   }
 
-  /// Actualiza los campos editables de un evento existente.
   Future<void> actualizarQuedada({
     required String eventoId,
     required String titulo,
@@ -150,7 +147,6 @@ class QuedadasService {
     });
   }
 
-  /// Eventos en los que el usuario actual figura como asistente.
   Stream<List<Quedada>> escucharQuedadasUnidas() {
     final usuario = _auth.currentUser;
     if (usuario == null) return Stream.value([]);
@@ -164,7 +160,6 @@ class QuedadasService {
       return lista;
     });
   }
-  /// Elimina al usuario actual de la lista de asistentes y devuelve una plaza.
   Future<void> abandonarQuedada(String eventoId) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;

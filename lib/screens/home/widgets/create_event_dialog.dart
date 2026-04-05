@@ -5,9 +5,8 @@ import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
 
-/// Muestra el diálogo de creación de evento usando un StatefulWidget
-/// para garantizar el ciclo de vida correcto de los TextEditingController.
 Future<void> showCreateEventDialog(
+  // Muestra una ventana emergente para crear un plan nuevo
   BuildContext context,
   QuedadasService service,
 ) async {
@@ -20,11 +19,6 @@ Future<void> showCreateEventDialog(
     ),
   );
 }
-
-// ─────────────────────────────────────────────
-//  Widget privado — gestiona los controllers
-//  correctamente con initState / dispose
-// ─────────────────────────────────────────────
 
 class _CreateEventDialog extends StatefulWidget {
   const _CreateEventDialog({
@@ -59,7 +53,6 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   bool _guardando = false;
   String? _errorMessage; 
 
-  // Fechas estilo EditDialog
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
 

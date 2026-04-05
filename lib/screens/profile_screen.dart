@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// TODO: Cambia esta ruta por la ruta real de tu archivo de estilos
 import '../app_theme.dart'; 
 
 class ProfileScreen extends StatefulWidget {
@@ -14,10 +13,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  // NUEVO: Controlador para el campo "Sobre mí"
   final TextEditingController _bioController = TextEditingController();
   
-  // Controles para secciones de actualización
   final GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
   final TextEditingController _currentPasswordForEmailController = TextEditingController();
   final TextEditingController _newEmailInputController = TextEditingController();
@@ -67,7 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _cargarDatosUsuario();
 
     _nameController.addListener(_validateForm);
-    _bioController.addListener(_validateForm); // Escuchamos si escribes en la biografía
+    _bioController.addListener(_validateForm);
   }
 
   @override
@@ -85,7 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _validateForm() {
     setState(() {
-      // El botón de guardar se activa siempre que haya un nombre escrito
       _isSaveEnabled = _nameController.text.trim().isNotEmpty;
     });
   }
@@ -101,7 +97,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _nameController.text = doc.data()?['nombre'] ?? user.displayName ?? "";
           _emailController.text = doc.data()?['email'] ?? user.email ?? "";
           _photoUrl = doc.data()?['fotoUrl'] ?? user.photoURL;
-          // NUEVO: Cargamos la biografía desde Firestore (si existe)
           _bioController.text = doc.data()?['bio'] ?? "";
         });
         _validateForm(); 
@@ -111,7 +106,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- SELECTOR DE AVATARES ---
   void _mostrarSelectorAvatar() {
     showModalBottomSheet(
       context: context,
@@ -178,17 +172,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- GUARDADO BÁSICO (Nombre, Avatar y Biografía) ---
+  // Guarda los cambios básicos (nombre y bio) en Firestore
   Future<void> _guardarDatosBasicos() async {
     setState(() => _isLoading = true);
     try {
       final user = FirebaseAuth.instance.currentUser!;
       final nuevoNombre = _nameController.text.trim();
-      final nuevaBio = _bioController.text.trim(); // Cogemos el texto de "Sobre mí"
+      final nuevaBio = _bioController.text.trim();
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
         'nombre': nuevoNombre,
-        'bio': nuevaBio, // NUEVO: Guardamos la biografía en la base de datos
+        'bio': nuevaBio,
         if (_photoUrl != null) 'fotoUrl': _photoUrl, 
       });
       
@@ -215,7 +209,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- MENSAJE DE ADVERTENCIA UNIVERSAL ---
   Future<bool> _pedirConfirmacionPeligrosa(String titulo, String mensaje) async {
     return await showDialog<bool>(
       context: context,
@@ -241,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ) ?? false;
   }
 
-  // --- ACTUALIZAR CORREO EN LÍNEA ---
+  // Inicia el proceso para cambiar de email verificando que no exista en otra cuenta
   Future<void> _actualizarCorreo() async {
     if (!_emailFormKey.currentState!.validate()) return;
 
@@ -257,7 +250,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final user = FirebaseAuth.instance.currentUser!;
       final nuevoCorreo = _newEmailInputController.text.trim();
       
-      // 1. Verificación manual expresa en la base de datos
       final existingUsers = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: nuevoCorreo)
@@ -270,17 +262,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
           setState(() => _isChangingEmail = false);
         }
-        return; // Salimos sin intentar reautenticar ni actualizar
+        return;
       }
                       
-      // 2. Si está libre, reautenticamos para proceder
       AuthCredential credential = EmailAuthProvider.credential(
         email: user.email!, 
         password: _currentPasswordForEmailController.text
       );
       await user.reauthenticateWithCredential(credential);
 
-      // 3. Ejecutamos el cambio en Firebase Auth
       await user.verifyBeforeUpdateEmail(nuevoCorreo);
 
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
@@ -312,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- ACTUALIZAR CONTRASEÑA EN LÍNEA ---
+  // Pide la contraseña actual para permitir crear una contraseña nueva
   Future<void> _actualizarPassword() async {
     if (!_passwordFormKey.currentState!.validate()) return;
 
@@ -390,7 +380,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-// --- LÓGICA DE BORRADO DE CUENTA (HU-03 CORREGIDA) ---
   void _showDeleteConfirmationDialog() {
     final passwordController = TextEditingController();
     bool isDeleting = false;
@@ -432,7 +421,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     try {
                       final user = FirebaseAuth.instance.currentUser!;
                       
-                      // 1. REAUTENTICAR AL USUARIO (Evita el error de "iniciar sesión de nuevo")
+                      // Necesitamos la contraseña para poder hacer el borrado
                       AuthCredential credential = EmailAuthProvider.credential(
                         email: user.email!, 
                         password: passwordController.text.trim()
@@ -441,24 +430,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       final db = FirebaseFirestore.instance;
 
-                      // 2. BORRAR LOS EVENTOS DEL USUARIO
-                      // Buscamos por el nombre, ya que es lo que guarda "organizador"
+                      // Borramos los eventos del usuario, su perfil de base de datos y su cuenta de autenticación
                       final queryByName = await db.collection('events').where('organizador', isEqualTo: _nameController.text.trim()).get();
                       for (final doc in queryByName.docs) {
                         await doc.reference.delete();
                       }
 
-                      // 3. BORRAR DOCUMENTO DE FIRESTORE
                       try { await db.collection('users').doc(user.uid).delete(); } catch (e) {}
 
-                      // 4. BORRAR USUARIO DE AUTHENTICATION
                       await user.delete(); 
 
-                      // 5. REDIRECCIÓN (Si tu app tiene un AuthStateListener en main.dart, 
-                      // al hacer user.delete() saltará automáticamente al Login)
                       if (mounted) {
                         Navigator.of(context).pop();
-                        // Nota: Puede que este SnackBar no se llegue a ver porque la app te expulsará al Login casi al instante.
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account deleted successfully.'), backgroundColor: AppColors.success));
                       }
                     } on FirebaseAuthException catch (e) {
@@ -539,15 +522,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  // NUEVO: Campo Sobre mí
                   TextField(
                     controller: _bioController,
-                    maxLines: 4, // Lo hace más alto, como un recuadro
-                    maxLength: 150, // Límite de caracteres para que no escriban El Quijote
+                    maxLines: 4,
+                    maxLength: 150,
                     decoration: const InputDecoration(
                       labelText: 'About me',
                       hintText: 'e.g., I love hiking and board games...',
-                      alignLabelWithHint: true, // Alinea el texto "Sobre mí" arriba a la izquierda
+                      alignLabelWithHint: true,
                     ),
                   ),
                 ],
@@ -566,7 +548,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Divider(),
             const SizedBox(height: AppSpacing.xl),
 
-            // SECCIÓN: CAMBIAR CORREO
             AppCard(
               padding: EdgeInsets.zero,
               child: ExpansionTile(
@@ -628,7 +609,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
 
-            // SECCIÓN: CAMBIAR CONTRASEÑA
             AppCard(
               padding: EdgeInsets.zero,
               child: ExpansionTile(

@@ -88,7 +88,6 @@ class EventCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
 
-          // --- MOSTRAR FECHAS ---
           Row(
             children: [
               const Icon(Icons.access_time_rounded, size: 16, color: AppColors.textSecondary),

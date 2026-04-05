@@ -16,6 +16,7 @@ class MisPlanesScreen extends StatefulWidget {
 
 class _MisPlanesScreenState extends State<MisPlanesScreen> {
   final _service = QuedadasService();
+  // Streams para mantener la pantalla actualizada si hay cambios en base de datos
   late final Stream<List<Quedada>> _creadosStream;
   late final Stream<List<Quedada>> _unidosStream;
 
@@ -29,7 +30,7 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 2, // Dos pestañas: "Creados" y "Unidos"
       child: Scaffold(
         backgroundColor: AppColors.background,
         floatingActionButton: Container(
@@ -96,10 +97,6 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
-//  Tab genérico con keepAlive para evitar
-//  re-suscripciones al cambiar de pestaña.
-// ─────────────────────────────────────────────
 class _PlanesTab extends StatefulWidget {
   final Stream<List<Quedada>> stream;
   final QuedadasService service;
@@ -122,6 +119,7 @@ class _PlanesTabState extends State<_PlanesTab>
   @override
   bool get wantKeepAlive => true;
 
+  // Llama al servicio para borrar este evento que hemos creado
   Future<void> _eliminar(BuildContext context, Quedada q) async {
     final confirmar = await showDialog<bool>(
       context: context,
@@ -163,6 +161,7 @@ class _PlanesTabState extends State<_PlanesTab>
     }
   }
 
+  // Nos desapunta de un evento creado por otra persona
   Future<void> _abandonar(BuildContext context, Quedada q) async {
     try {
       await widget.service.abandonarQuedada(q.id);
@@ -257,9 +256,6 @@ class _PlanesTabState extends State<_PlanesTab>
   }
 }
 
-// ─────────────────────────────────────────────
-//  Diálogo de edición (solo creador)
-// ─────────────────────────────────────────────
 class _EditDialog extends StatefulWidget {
   final Quedada quedada;
   final QuedadasService service;
@@ -294,7 +290,6 @@ class _EditDialogState extends State<_EditDialog> {
   DateTime? _fechaFin;
   bool _guardando = false;
 
-  // Número de asistentes actuales (cupo mínimo permitido)
   int get _asistentesActuales => widget.quedada.asistentesId.length;
 
   @override
@@ -371,7 +366,6 @@ class _EditDialogState extends State<_EditDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Título
               TextFormField(
                 controller: _titulo,
                 textInputAction: TextInputAction.next,
@@ -386,7 +380,6 @@ class _EditDialogState extends State<_EditDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Descripción
               TextFormField(
                 controller: _descripcion,
                 maxLines: 3,
@@ -396,7 +389,6 @@ class _EditDialogState extends State<_EditDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Temática (dropdown, siempre válido)
               DropdownButtonFormField<String>(
                 value: _tematica,
                 decoration: const InputDecoration(labelText: 'Category'),
@@ -407,7 +399,6 @@ class _EditDialogState extends State<_EditDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Cupo máximo
               TextFormField(
                 controller: _cupo,
                 keyboardType: TextInputType.number,
@@ -422,7 +413,6 @@ class _EditDialogState extends State<_EditDialog> {
                   return null;
                 },
               ),
-              // Fecha de inicio
               const SizedBox(height: AppSpacing.md),
               DateTimePicker(
                 label: 'Start',
@@ -438,7 +428,6 @@ class _EditDialogState extends State<_EditDialog> {
                 onCleared: () => setState(() => _fechaInicio = null),
               ),
 
-              // Fecha de fin
               const SizedBox(height: AppSpacing.md),
               DateTimePicker(
                 label: 'End',
@@ -448,7 +437,6 @@ class _EditDialogState extends State<_EditDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Estado
               DropdownButtonFormField<String>(
                 value: _estado,
                 decoration: const InputDecoration(labelText: 'Status'),

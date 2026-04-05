@@ -28,15 +28,14 @@ class _DateTimePickerState extends State<DateTimePicker> {
       '${dt.minute.toString().padLeft(2, '0')}';
 
   Future<void> _pick() async {
-    // Evitar el crash _viewInsets.isNonNegative de Flutter Web escondiendo el teclado primero
+    // Bajamos el teclado del SO si está abierto para evitar un error de Flutter Web 
     FocusScope.of(context).unfocus();
 
     final hoy = DateTime.now();
-    // Normalizamos 'hoy' para que el firstDate funcione bien si hoy es medianoche
     final hoyNormalizado = DateTime(hoy.year, hoy.month, hoy.day);
     
-    // Si ya existe un valor previo anterior a 'hoy' (ej: evento antiguo), lo permitimos
-    // para no bloquear la edición, sino usamos hoyNormalizado.
+    // Si la fecha actual elegida es anterior a hoy (por ejemplo un evento en el pasado editándose),
+    // no bloqueamos el selector para que no falle.
     final inicial = widget.value != null && widget.value!.isBefore(hoyNormalizado)
         ? widget.value!
         : hoyNormalizado;

@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'GoTogether',
-      theme: AppTheme.theme, // ← aquí se aplican los estilos
+      theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
 
       routes: {
@@ -35,7 +35,6 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          // Si hay sesión activa → HomeScreen, si no → LoginScreen
           return snapshot.hasData ? const HomeScreen() : const LoginScreen();
         },
       ),
