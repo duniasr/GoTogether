@@ -40,21 +40,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl; 
   
   final List<String> _avataresDisponibles = [
-    'assets/images/avatars/avatar1.png',
-    'assets/images/avatars/avatar2.png',
-    'assets/images/avatars/avatar3.png',
-    'assets/images/avatars/avatar4.png',
-    'assets/images/avatars/avatar5.png',
-    'assets/images/avatars/avatar6.png',
-    'assets/images/avatars/avatar7.png',
-    'assets/images/avatars/avatar8.png',
-    'assets/images/avatars/avatar9.png',
-    'assets/images/avatars/avatar10.png',
-    'assets/images/avatars/avatar11.png',
-    'assets/images/avatars/avatar12.png',
-    'assets/images/avatars/avatar13.png',
-    'assets/images/avatars/avatar14.png',
-    'assets/images/avatars/avatar15.png'
+    'assets/images/avatars/avatar1.jpg',
+    'assets/images/avatars/avatar2.jpg',
+    'assets/images/avatars/avatar3.jpg',
+    'assets/images/avatars/avatar4.webp',
+    'assets/images/avatars/avatar5.jpg',
+    'assets/images/avatars/avatar6.jpg',
   ];
 
   @override
