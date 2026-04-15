@@ -8,12 +8,14 @@ class EventCard extends StatelessWidget {
   final Quedada quedada;
   final VoidCallback? onDelete;
   final Widget? actionButton;
+  final bool isJoined; // <--- Añadido para saber si el usuario está en el plan
 
   const EventCard({
     super.key,
     required this.quedada,
     this.onDelete,
     this.actionButton,
+    this.isJoined = false, // <--- Por defecto es falso para que no rompa el resto de la app
   });
 
   @override
@@ -158,13 +160,34 @@ class EventCard extends StatelessWidget {
               color: almostFull ? AppColors.error : catColor,
             ),
           ),
-          if (actionButton != null) ...[
+          
+          // === INICIO LÓGICA HU-11 (AFOROS) ===
+          if (spots <= 0 && !isJoined) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: const Text(
+                'Aforo Completo',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ] else if (actionButton != null) ...[
             const SizedBox(height: AppSpacing.md),
             SizedBox(
               width: double.infinity,
               child: actionButton!,
             ),
           ],
+          // === FIN LÓGICA HU-11 ===
         ],
       ),
     );

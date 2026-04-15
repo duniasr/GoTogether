@@ -467,7 +467,7 @@ class _QuedadasPageState extends State<QuedadasPage> {
                         const SizedBox(height: 4),
                         Text('Reportes: ${quedada.contadorReportes}'),
                         const SizedBox(height: 4),
-                        Text('Asistentes: ${quedada.asistentesId.length}'),
+                        Text('Asistentes: ${quedada.asistentesID.length}'),
                         const SizedBox(height: 4),
                         Text(
                           'Ubicación: ${quedada.ubicacion.latitude.toStringAsFixed(5)}, '

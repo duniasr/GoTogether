@@ -68,7 +68,7 @@ class QuedadasService {
 
     final evento = Quedada(
       id: '',
-      asistentesId: const <String>[],
+      asistentesID: const <String>[],
       contadorReportes: 0,
       cupoMax: cupoMax,
       descripcion: descripcion.trim(),
@@ -148,24 +148,36 @@ class QuedadasService {
   }
 
   Stream<List<Quedada>> escucharQuedadasUnidas() {
-    final usuario = _auth.currentUser;
-    if (usuario == null) return Stream.value([]);
+  final usuario = _auth.currentUser;
+  if (usuario == null) return Stream.value([]);
 
-    return _eventsRef
-        .where('asistentesID', arrayContains: usuario.uid)
-        .snapshots()
-        .map((snap) {
-      final lista = snap.docs.map(Quedada.fromFirestore).toList(growable: false);
-      lista.sort((a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()));
-      return lista;
-    });
-  }
-  Future<void> abandonarQuedada(String eventoId) async {
-    final uid = _auth.currentUser?.uid;
-    if (uid == null) return;
-    await _eventsRef.doc(eventoId).update({
-      'asistentesID': FieldValue.arrayRemove([uid]),
-      'plazasLibres': FieldValue.increment(1),
-    });
-  }
+  return _eventsRef
+      .where('asistentesID', arrayContains: usuario.uid) // ← corregido
+      .snapshots()
+      .map((snap) {
+    final lista = snap.docs.map(Quedada.fromFirestore).toList(growable: false);
+    lista.sort((a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()));
+    return lista;
+  });
+}
+
+Future<void> unirseAQuedada(String eventoId) async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
+
+  await _eventsRef.doc(eventoId).update({
+    'asistentesID': FieldValue.arrayUnion([uid]), // ← corregido
+    'plazasLibres': FieldValue.increment(-1),
+  });
+}
+
+Future<void> abandonarQuedada(String eventoId) async {
+  final uid = _auth.currentUser?.uid;
+  if (uid == null) return;
+
+  await _eventsRef.doc(eventoId).update({
+    'asistentesID': FieldValue.arrayRemove([uid]), // ← ya estaba bien
+    'plazasLibres': FieldValue.increment(1),
+  });
+}
 }
