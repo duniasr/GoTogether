@@ -4,7 +4,7 @@ class Quedada {
   // Constructor de la clase
   const Quedada({
     required this.id,
-    required this.asistentesId,
+    required this.asistentesID,
     required this.contadorReportes,
     required this.cupoMax,
     required this.descripcion,
@@ -20,7 +20,7 @@ class Quedada {
   });
 
   final String id;
-  final List<String> asistentesId;
+  final List<String> asistentesID;
   final int contadorReportes;
   final int cupoMax;
   final String descripcion;
@@ -45,7 +45,7 @@ class Quedada {
 
     return Quedada(
       id: doc.id,
-      asistentesId: asistentesRaw is Iterable
+      asistentesID: asistentesRaw is Iterable
           ? asistentesRaw.map((item) => item.toString()).toList(growable: false)
           : const <String>[],
       contadorReportes: (data['contadorReportes'] as num?)?.toInt() ?? 0,
@@ -69,7 +69,7 @@ class Quedada {
 
   Map<String, dynamic> toFirestore() {
     return {
-      'asistentesID': asistentesId,
+      'asistentesID': asistentesID,
       'contadorReportes': contadorReportes,
       'cupoMax': cupoMax,
       'descripcion': descripcion,

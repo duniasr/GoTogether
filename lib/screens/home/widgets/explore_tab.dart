@@ -109,65 +109,104 @@ class ExploreTab extends StatelessWidget {
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final q = filtered[index];
-                      final isOrganizer = FirebaseAuth.instance.currentUser?.uid == q.organizador ||
-                                          FirebaseAuth.instance.currentUser?.email == q.organizador;
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      final email = FirebaseAuth.instance.currentUser?.email;
+                      final isOrganizer =
+                          uid == q.organizador || email == q.organizador;
+                      final isJoined = (uid != null && q.asistentesID.contains(uid)) || isOrganizer;
+
                       return Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: EventCard(
                           quedada: q,
-                          onDelete: isOrganizer ? () async {
-                            final confirmar = await showDialog<bool>(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: const Text('Delete event'),
-                                content: Text('Are you sure you want to delete "${q.titulo}"?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(ctx).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  FilledButton(
-                                    style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-                                    onPressed: () => Navigator.of(ctx).pop(true),
-                                    child: const Text('Delete'),
-                                  ),
-                                ],
-                              ),
-                            ) ?? false;
+                          isJoined: isJoined,
+                          onDelete: isOrganizer
+                              ? () async {
+                                  final confirmar = await showDialog<bool>(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Delete event'),
+                                      content: Text(
+                                        'Are you sure you want to delete "${q.titulo}"?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(false),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        FilledButton(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: AppColors.error,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.of(ctx).pop(true),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  ) ?? false;
 
-                            if (!confirmar) return;
-                            try {
-                              await service.eliminarQuedada(q.id);
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Event deleted.')),
-                              );
-                            } catch (e) {
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error deleting: $e')),
-                              );
-                            }
-                          } : null,
-                          actionButton: ElevatedButton(
+                                  if (!confirmar) return;
+                                  try {
+                                    await service.eliminarQuedada(q.id);
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Event deleted.'),
+                                      ),
+                                    );
+                                  } catch (e) {
+                                    if (!context.mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Error deleting: $e'),
+                                      ),
+                                    );
+                                  }
+                                }
+                              : null,
+                          actionButton: isJoined ? null : ElevatedButton(
                             onPressed: q.plazasLibres > 0
-                                ? () {
-                                    
+                                ? () async {
+                                    try {
+                                      await service.unirseAQuedada(q.id);
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content:
+                                              Text('You have joined the plan!'),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error joining: $e'),
+                                        ),
+                                      );
+                                    }
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               disabledBackgroundColor: AppColors.surfaceAlt,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 12),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.sm),
                               ),
                               elevation: 0,
                             ),
                             child: Text(
                               q.plazasLibres > 0 ? 'Join' : 'Full',
                               style: AppTextStyles.button.copyWith(
-                                color: q.plazasLibres > 0 ? Colors.white : AppColors.textHint,
+                                color: q.plazasLibres > 0
+                                    ? Colors.white
+                                    : AppColors.textHint,
                               ),
                             ),
                           ),

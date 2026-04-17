@@ -163,6 +163,32 @@ class _PlanesTabState extends State<_PlanesTab>
 
   // Nos desapunta de un evento creado por otra persona
   Future<void> _abandonar(BuildContext context, Quedada q) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: const Text('Leave plan'),
+        content: Text(
+          'Are you sure you want to leave "${q.titulo}"?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Leave'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    if (!confirmar) return;
+
     try {
       await widget.service.abandonarQuedada(q.id);
       if (!context.mounted) return;
@@ -224,6 +250,7 @@ class _PlanesTabState extends State<_PlanesTab>
             final q = planes[i];
             return EventCard(
               quedada: q,
+              isJoined: true,
               onDelete: widget.esCreador ? () => _eliminar(context, q) : null,
               actionButton: ElevatedButton(
                 onPressed: widget.esCreador
@@ -290,7 +317,7 @@ class _EditDialogState extends State<_EditDialog> {
   DateTime? _fechaFin;
   bool _guardando = false;
 
-  int get _asistentesActuales => widget.quedada.asistentesId.length;
+  int get _asistentesActuales => widget.quedada.asistentesID.length;
 
   @override
   void initState() {
