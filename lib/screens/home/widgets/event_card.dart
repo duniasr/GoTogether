@@ -172,7 +172,7 @@ class EventCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Text(
-                'Aforo Completo',
+                'Fully Booked',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.error,

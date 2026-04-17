@@ -4,11 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/quedada.dart';
 
 class QuedadasService {
-  QuedadasService({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  QuedadasService({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -63,9 +61,14 @@ class QuedadasService {
       if (usuario != null) {
         try {
           // Si no se pasó un nombre, buscamos si el usuario tiene un nombre guardado en la BD
-          final userDoc = await _firestore.collection('users').doc(usuario.uid).get();
-          
-          if (userDoc.exists && userDoc.data()?['nombre'] != null && userDoc.data()!['nombre'].toString().trim().isNotEmpty) {
+          final userDoc = await _firestore
+              .collection('users')
+              .doc(usuario.uid)
+              .get();
+
+          if (userDoc.exists &&
+              userDoc.data()?['nombre'] != null &&
+              userDoc.data()!['nombre'].toString().trim().isNotEmpty) {
             organizadorFinal = userDoc.data()!['nombre'];
           } else {
             organizadorFinal = usuario.displayName ?? 'Anónimo';
@@ -113,24 +116,27 @@ class QuedadasService {
           .collection('users')
           .doc(usuario.uid)
           .get()
-          .then<String>((doc) =>
-              doc.data()?['nombre'] as String? ??
-              usuario.displayName ??
-              'Anónimo')
+          .then<String>(
+            (doc) =>
+                doc.data()?['nombre'] as String? ??
+                usuario.displayName ??
+                'Anónimo',
+          )
           .catchError((_) => usuario.displayName ?? 'Anónimo'),
     ).asyncExpand(
       (nombre) => _eventsRef
           .where('organizador', isEqualTo: nombre)
           .snapshots()
           .map((snapshot) {
-        final eventos = snapshot.docs
-            .map(Quedada.fromFirestore)
-            .toList(growable: false);
-        eventos.sort(
-          (a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
-        );
-        return eventos;
-      }),
+            final eventos = snapshot.docs
+                .map(Quedada.fromFirestore)
+                .toList(growable: false);
+            eventos.sort(
+              (a, b) =>
+                  a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
+            );
+            return eventos;
+          }),
     );
   }
 
@@ -160,36 +166,40 @@ class QuedadasService {
   }
 
   Stream<List<Quedada>> escucharQuedadasUnidas() {
-  final usuario = _auth.currentUser;
-  if (usuario == null) return Stream.value([]);
+    final usuario = _auth.currentUser;
+    if (usuario == null) return Stream.value([]);
 
-  return _eventsRef
-      .where('asistentesID', arrayContains: usuario.uid) // ← corregido
-      .snapshots()
-      .map((snap) {
-    final lista = snap.docs.map(Quedada.fromFirestore).toList(growable: false);
-    lista.sort((a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()));
-    return lista;
-  });
-}
+    return _eventsRef
+        .where('asistentesID', arrayContains: usuario.uid) // ← corregido
+        .snapshots()
+        .map((snap) {
+          final lista = snap.docs
+              .map(Quedada.fromFirestore)
+              .toList(growable: false);
+          lista.sort(
+            (a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
+          );
+          return lista;
+        });
+  }
 
-Future<void> unirseAQuedada(String eventoId) async {
-  final uid = _auth.currentUser?.uid;
-  if (uid == null) return;
+  Future<void> unirseAQuedada(String eventoId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
 
-  await _eventsRef.doc(eventoId).update({
-    'asistentesID': FieldValue.arrayUnion([uid]), // ← corregido
-    'plazasLibres': FieldValue.increment(-1),
-  });
-}
+    await _eventsRef.doc(eventoId).update({
+      'asistentesID': FieldValue.arrayUnion([uid]), // ← corregido
+      'plazasLibres': FieldValue.increment(-1),
+    });
+  }
 
-Future<void> abandonarQuedada(String eventoId) async {
-  final uid = _auth.currentUser?.uid;
-  if (uid == null) return;
+  Future<void> abandonarQuedada(String eventoId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
 
-  await _eventsRef.doc(eventoId).update({
-    'asistentesID': FieldValue.arrayRemove([uid]), // ← ya estaba bien
-    'plazasLibres': FieldValue.increment(1),
-  });
-}
+    await _eventsRef.doc(eventoId).update({
+      'asistentesID': FieldValue.arrayRemove([uid]), // ← ya estaba bien
+      'plazasLibres': FieldValue.increment(1),
+    });
+  }
 }
