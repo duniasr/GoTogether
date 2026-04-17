@@ -24,7 +24,7 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
   void initState() {
     super.initState();
     _creadosStream = _service.escucharMisQuedadas();
-    _unidosStream  = _service.escucharQuedadasUnidas();
+    _unidosStream = _service.escucharQuedadasUnidas();
   }
 
   @override
@@ -59,7 +59,11 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.lg, AppSpacing.md, 0),
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  0,
+                ),
                 child: Text('My Plans', style: AppTextStyles.displayMedium),
               ),
               const TabBar(
@@ -121,85 +125,89 @@ class _PlanesTabState extends State<_PlanesTab>
 
   // Llama al servicio para borrar este evento que hemos creado
   Future<void> _eliminar(BuildContext context, Quedada q) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg)),
-        title: const Text('Delete plan'),
-        content: Text(
-          'Are you sure you want to delete "${q.titulo}"?\nThis action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+    final confirmar =
+        await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            title: const Text('Delete plan'),
+            content: Text(
+              'Are you sure you want to delete "${q.titulo}"?\nThis action cannot be undone.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (!confirmar) return;
 
     try {
       await widget.service.eliminarQuedada(q.id);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Plan deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Plan deleted.')));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   // Nos desapunta de un evento creado por otra persona
   Future<void> _abandonar(BuildContext context, Quedada q) async {
-    final confirmar = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg)),
-        title: const Text('Leave plan'),
-        content: Text(
-          'Are you sure you want to leave "${q.titulo}"?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+    final confirmar =
+        await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+            title: const Text('Leave plan'),
+            content: Text('Are you sure you want to leave "${q.titulo}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Leave'),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Leave'),
-          ),
-        ],
-      ),
-    ) ?? false;
+        ) ??
+        false;
 
     if (!confirmar) return;
 
     try {
       await widget.service.abandonarQuedada(q.id);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You have left the plan.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('You have left the plan.')));
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -232,8 +240,11 @@ class _PlanesTabState extends State<_PlanesTab>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.event_busy_outlined,
-                    size: 52, color: AppColors.textHint),
+                const Icon(
+                  Icons.event_busy_outlined,
+                  size: 52,
+                  color: AppColors.textHint,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Text(widget.textoVacio, style: AppTextStyles.bodyMedium),
               ],
@@ -243,7 +254,11 @@ class _PlanesTabState extends State<_PlanesTab>
 
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md, AppSpacing.md, AppSpacing.md, 100),
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            100,
+          ),
           itemCount: planes.length,
           separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
           itemBuilder: (context, i) {
@@ -260,8 +275,9 @@ class _PlanesTabState extends State<_PlanesTab>
                   backgroundColor: widget.esCreador
                       ? AppColors.primary
                       : AppColors.error.withOpacity(0.12),
-                  foregroundColor:
-                      widget.esCreador ? Colors.white : AppColors.error,
+                  foregroundColor: widget.esCreador
+                      ? Colors.white
+                      : AppColors.error,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -300,9 +316,19 @@ class _EditDialog extends StatefulWidget {
 
 class _EditDialogState extends State<_EditDialog> {
   static const _tematicas = [
-    'Deporte', 'Naturaleza', 'Estudio', 'Ocio', 'Cultura',
-    'Gastronomía', 'Fiesta', 'Voluntariado', 'Viajes',
-    'Videojuegos', 'Música', 'Networking', 'Otros',
+    'Deporte',
+    'Naturaleza',
+    'Estudio',
+    'Ocio',
+    'Cultura',
+    'Gastronomía',
+    'Fiesta',
+    'Voluntariado',
+    'Viajes',
+    'Videojuegos',
+    'Música',
+    'Networking',
+    'Otros',
   ];
   static const _estados = ['abierta', 'cerrada', 'cancelada'];
 
@@ -323,13 +349,13 @@ class _EditDialogState extends State<_EditDialog> {
   void initState() {
     super.initState();
     final q = widget.quedada;
-    _titulo      = TextEditingController(text: q.titulo);
+    _titulo = TextEditingController(text: q.titulo);
     _descripcion = TextEditingController(text: q.descripcion);
-    _cupo        = TextEditingController(text: q.cupoMax.toString());
+    _cupo = TextEditingController(text: q.cupoMax.toString());
     _tematica = _tematicas.contains(q.tematica) ? q.tematica : _tematicas.first;
-    _estado   = _estados.contains(q.estado) ? q.estado : _estados.first;
+    _estado = _estados.contains(q.estado) ? q.estado : _estados.first;
     _fechaInicio = q.fechaInicio;
-    _fechaFin    = q.fechaFin;
+    _fechaFin = q.fechaFin;
   }
 
   @override
@@ -345,12 +371,15 @@ class _EditDialogState extends State<_EditDialog> {
 
     if (_fechaInicio == null || _fechaFin == null) {
       widget.messenger.showSnackBar(
-        const SnackBar(content: Text('Please select both start and end dates.')),
+        const SnackBar(
+          content: Text('Please select both start and end dates.'),
+        ),
       );
       return;
     }
 
-    if (_fechaFin!.isBefore(_fechaInicio!) || _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
+    if (_fechaFin!.isBefore(_fechaInicio!) ||
+        _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
       widget.messenger.showSnackBar(
         const SnackBar(content: Text('End date must be after start date.')),
       );
@@ -385,7 +414,8 @@ class _EditDialogState extends State<_EditDialog> {
     return AlertDialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg)),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
       title: const Text('Edit plan', style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
         child: Form(
@@ -398,8 +428,11 @@ class _EditDialogState extends State<_EditDialog> {
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Title'),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Title cannot be empty';
-                  if (!RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(v.trim())) {
+                  if (v == null || v.trim().isEmpty)
+                    return 'Title cannot be empty';
+                  if (!RegExp(
+                    r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]',
+                  ).hasMatch(v.trim())) {
                     return 'Must include at least one letter';
                   }
                   return null;
@@ -411,8 +444,9 @@ class _EditDialogState extends State<_EditDialog> {
                 controller: _descripcion,
                 maxLines: 3,
                 decoration: const InputDecoration(labelText: 'Description'),
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Description cannot be empty' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Description cannot be empty'
+                    : null,
               ),
               const SizedBox(height: AppSpacing.md),
 
@@ -420,16 +454,25 @@ class _EditDialogState extends State<_EditDialog> {
                 value: _tematica,
                 decoration: const InputDecoration(labelText: 'Category'),
                 items: _tematicas
-                    .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(translateCategory(t)),
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) { if (v != null) setState(() => _tematica = v); },
+                onChanged: (v) {
+                  if (v != null) setState(() => _tematica = v);
+                },
               ),
               const SizedBox(height: AppSpacing.md),
 
               TextFormField(
                 controller: _cupo,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Max participants'),
+                decoration: const InputDecoration(
+                  labelText: 'Max participants',
+                ),
                 validator: (v) {
                   final n = int.tryParse(v?.trim() ?? '');
                   if (n == null) return 'Enter a valid number';
@@ -468,12 +511,16 @@ class _EditDialogState extends State<_EditDialog> {
                 value: _estado,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: _estados
-                    .map((e) => DropdownMenuItem(
-                          value: e,
-                          child: Text(translateStatus(e)),
-                        ))
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(translateStatus(e)),
+                      ),
+                    )
                     .toList(),
-                onChanged: (v) { if (v != null) setState(() => _estado = v); },
+                onChanged: (v) {
+                  if (v != null) setState(() => _estado = v);
+                },
               ),
             ],
           ),
@@ -487,9 +534,14 @@ class _EditDialogState extends State<_EditDialog> {
         ElevatedButton(
           onPressed: _guardando ? null : _guardar,
           child: _guardando
-              ? const SizedBox(width: 16, height: 16,
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
                   child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2))
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
               : const Text('Update'),
         ),
       ],

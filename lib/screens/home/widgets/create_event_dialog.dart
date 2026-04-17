@@ -4,7 +4,11 @@ import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'location_picker_screen.dart';
 Future<void> showCreateEventDialog(
   // Muestra una ventana emergente para crear un plan nuevo
   BuildContext context,
@@ -41,6 +45,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   late final TextEditingController _cupoCtrl;
   late final TextEditingController _latCtrl;
   late final TextEditingController _lonCtrl;
+  late final TextEditingController _direccionCtrl;
 
   static const List<String> _tematicas = [
     'Deporte', 'Naturaleza', 'Estudio', 'Ocio', 'Cultura',
@@ -56,6 +61,67 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
 
+  Future<String?> _fallbackGeocode(double lat, double lon) async {
+    try {
+      final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
+      final response = await http.get(url, headers: {'User-Agent': 'GoTogetherApp_FallbackGeocoding'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data != null) {
+          final addr = data['address'] ?? {};
+          final exactName = data['name'] ?? '';
+          final road = addr['road'] ?? addr['pedestrian'] ?? addr['path'] ?? addr['suburb'] ?? '';
+          final houseNumber = addr['house_number'] ?? '';
+          final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['municipality'] ?? '';
+
+          final parts = <String>[];
+          if (exactName.toString().isNotEmpty) {
+            parts.add(exactName.toString());
+          } else {
+            String streetName = road.toString();
+            if (houseNumber.toString().isNotEmpty) {
+              streetName += ' $houseNumber';
+            }
+            if (streetName.trim().isNotEmpty) {
+              parts.add(streetName.trim());
+            }
+          }
+
+          if (city.toString().isNotEmpty && (parts.isEmpty || !parts.last.contains(city.toString()))) {
+            parts.add(city.toString());
+          }
+
+          if (parts.isNotEmpty) return parts.join(', ');
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<LatLng?> _forwardGeocode(String query) async {
+    try {
+      List<Location> locations = await locationFromAddress(query);
+      if (locations.isNotEmpty) {
+        return LatLng(locations.first.latitude, locations.first.longitude);
+      }
+    } catch (_) {}
+    
+    // Fallback to OpenStreetMap
+    try {
+      final url = Uri.parse('https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1');
+      final response = await http.get(url, headers: {'User-Agent': 'GoTogetherApp_SearchFallback'});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        if (data.isNotEmpty) {
+          final lat = double.parse(data[0]['lat'].toString());
+          final lon = double.parse(data[0]['lon'].toString());
+          return LatLng(lat, lon);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -64,6 +130,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     _cupoCtrl = TextEditingController();
     _latCtrl = TextEditingController();
     _lonCtrl = TextEditingController();
+    _direccionCtrl = TextEditingController();
   }
 
   @override
@@ -73,6 +140,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     _cupoCtrl.dispose();
     _latCtrl.dispose();
     _lonCtrl.dispose();
+    _direccionCtrl.dispose();
     super.dispose();
   }
 
@@ -228,42 +296,113 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               ),
               const SizedBox(height: 12),
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start, 
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _latCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Latitude *',
-                        hintText: 'e.g. 28.1248',
-                        prefixIcon: Icon(Icons.place_outlined),
-                      ),
-                      validator: (v) {
-                        final val = double.tryParse(v?.trim().replaceAll(',', '.') ?? '');
-                        if (val == null || val < -90 || val > 90) return 'Invalid';
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _lonCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Longitude *',
-                        hintText: 'e.g. -15.43',
-                        prefixIcon: Icon(Icons.explore_outlined),
-                      ),
-                      validator: (v) {
-                        final val = double.tryParse(v?.trim().replaceAll(',', '.') ?? '');
-                        if (val == null || val < -180 || val > 180) return 'Invalid';
-                        return null;
-                      },
+                  Text('Location *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+                  TextButton.icon(
+                    onPressed: () async {
+                      LatLng? initialLoc;
+                      final lat = double.tryParse(_latCtrl.text.replaceAll(',', '.'));
+                      final lon = double.tryParse(_lonCtrl.text.replaceAll(',', '.'));
+                      if (lat != null && lon != null) {
+                        initialLoc = LatLng(lat, lon);
+                      }
+                      final LatLng? picked = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => LocationPickerScreen(initialLocation: initialLoc),
+                        ),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          _latCtrl.text = picked.latitude.toStringAsFixed(6);
+                          _lonCtrl.text = picked.longitude.toStringAsFixed(6);
+                          _direccionCtrl.text = 'Loading address...';
+                        });
+                        try {
+                          List<Placemark> placemarks = await placemarkFromCoordinates(picked.latitude, picked.longitude);
+                          if (placemarks.isNotEmpty) {
+                            final p = placemarks.first;
+                            final parts = [
+                              if (p.street?.isNotEmpty == true) p.street!,
+                              if (p.name?.isNotEmpty == true && p.name != p.street) p.name!,
+                              if (p.subLocality?.isNotEmpty == true) p.subLocality!,
+                              if (p.locality?.isNotEmpty == true) p.locality!,
+                              if (p.country?.isNotEmpty == true) p.country!,
+                            ];
+                            final addr = parts.join(', ');
+                            if (addr.isNotEmpty) {
+                              setState(() => _direccionCtrl.text = addr);
+                            } else {
+                              throw Exception('Empty address computed');
+                            }
+                          } else {
+                            throw Exception('No placemarks found');
+                          }
+                        } catch(e) {
+                          // Fallback to nominatim
+                          final fallback = await _fallbackGeocode(picked.latitude, picked.longitude);
+                          setState(() {
+                            _direccionCtrl.text = fallback ?? '${picked.latitude.toStringAsFixed(4)}, ${picked.longitude.toStringAsFixed(4)}';
+                          });
+                        }
+                      }
+                    },
+                    icon: const Icon(Icons.map_outlined, size: 18),
+                    label: const Text('Pick on map'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 4),
+              TextFormField(
+                controller: _direccionCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Address or Location *',
+                  hintText: 'Type address and click search icon, or pick on map',
+                  prefixIcon: const Icon(Icons.place_outlined),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.search, color: AppColors.primary),
+                    onPressed: () async {
+                      if (_guardando) return;
+                      final query = _direccionCtrl.text.trim();
+                      if (query.isEmpty) return;
+                      
+                      setState(() => _guardando = true);
+                      final coords = await _forwardGeocode(query);
+                      setState(() => _guardando = false);
+                      
+                      if (!mounted) return;
+                      
+                      if (coords != null) {
+                        setState(() {
+                          _latCtrl.text = coords.latitude.toStringAsFixed(6);
+                          _lonCtrl.text = coords.longitude.toStringAsFixed(6);
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Ubicación encontrada por texto'), backgroundColor: Colors.green)
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No se pudo encontrar en texto, prueba con el botón "Pick on map"'), backgroundColor: Colors.red)
+                        );
+                      }
+                    },
+                  )
+                ),
+                onChanged: (v) {
+                  _latCtrl.clear();
+                  _lonCtrl.clear();
+                },
+                validator: (v) {
+                  if (_latCtrl.text.isEmpty || _lonCtrl.text.isEmpty) {
+                    return 'Please click the search icon or pick on map';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 8),
               Container(
