@@ -40,12 +40,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl; 
   
   final List<String> _avataresDisponibles = [
-    'assets/images/avatars/avatar1.jpg',
-    'assets/images/avatars/avatar2.jpg',
-    'assets/images/avatars/avatar3.jpg',
-    'assets/images/avatars/avatar4.webp',
-    'assets/images/avatars/avatar5.jpg',
-    'assets/images/avatars/avatar6.jpg',
+    'assets/images/avatars/avatar1.png',
+    'assets/images/avatars/avatar2.png',
+    'assets/images/avatars/avatar3.png',
+    'assets/images/avatars/avatar4.png',
+    'assets/images/avatars/avatar5.png',
+    'assets/images/avatars/avatar6.png',
   ];
 
   @override
@@ -476,13 +476,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: AppColors.primaryLight,
-                    backgroundImage: _photoUrl != null && _photoUrl!.isNotEmpty 
-                        ? AssetImage(_photoUrl!) 
-                        : null,
-                    
-                    child: _photoUrl == null || _photoUrl!.isEmpty
-                        ? const Icon(Icons.person, size: 60, color: AppColors.primary)
-                        : null,
+                    backgroundImage: _photoUrl != null && _photoUrl!.isNotEmpty
+                        ? (_photoUrl!.startsWith('http')
+                            ? NetworkImage(_photoUrl!) as ImageProvider
+                            : AssetImage(_photoUrl!))
+                        : const AssetImage('assets/images/avatars/default_avatar.png'),
                   ),
                   Container(
                     padding: const EdgeInsets.all(4),

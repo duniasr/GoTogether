@@ -31,6 +31,18 @@ class QuedadasService {
     });
   }
 
+  
+  Stream<List<Quedada>> escucharQuedadasFuturas() {
+    return _eventsRef
+        .where('fechaInicio', isGreaterThanOrEqualTo: Timestamp.now())
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map(Quedada.fromFirestore)
+          .toList(growable: false);
+    });
+  }
+
   Future<void> crearQuedada({
     required String titulo,
     required String descripcion,
