@@ -93,13 +93,7 @@ class _AuthFormState extends State<AuthForm> {
       String password = _passwordController.text.trim();
 
       if (widget.isLogin) {
-        final query = await FirebaseFirestore.instance.collection('users').where('email', isEqualTo: email).limit(1).get();
-        if (query.docs.isEmpty) {
-          setState(() { _backendEmailError = "Invalid email"; });
-          _formKey.currentState!.validate();
-          setState(() { _isLoading = false; });
-          return;
-        }
+
 
         await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: email, password: password
