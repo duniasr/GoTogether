@@ -55,27 +55,38 @@ class QuedadasService {
   }) async {
     final usuario = _auth.currentUser;
     String organizadorFinal = organizador.trim();
+    bool esVerificadoFinal = esVerificado;
 
-    if (organizadorFinal.isEmpty) {
-      if (usuario != null) {
-        try {
-          // Si no se pasó un nombre, buscamos si el usuario tiene un nombre guardado en la BD
-          final userDoc = await _firestore
-              .collection('users')
-              .doc(usuario.uid)
-              .get();
+    if (usuario != null) {
+      try {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(usuario.uid)
+            .get();
 
-          if (userDoc.exists &&
+        if (userDoc.exists) {
+          // Si el usuario es verificado, sus eventos se crean como verificados automáticamente
+          if (userDoc.data()?['rol'] == 'verificado') {
+            esVerificadoFinal = true;
+          }
+
+          if (organizadorFinal.isEmpty &&
               userDoc.data()?['nombre'] != null &&
               userDoc.data()!['nombre'].toString().trim().isNotEmpty) {
             organizadorFinal = userDoc.data()!['nombre'];
-          } else {
-            organizadorFinal = usuario.displayName ?? 'Anónimo';
           }
-        } catch (e) {
+        }
+
+        if (organizadorFinal.isEmpty) {
+          organizadorFinal = usuario.displayName ?? 'Anónimo';
+        }
+      } catch (e) {
+        if (organizadorFinal.isEmpty) {
           organizadorFinal = 'Anónimo';
         }
-      } else {
+      }
+    } else {
+      if (organizadorFinal.isEmpty) {
         organizadorFinal = 'Anónimo';
       }
     }
@@ -86,7 +97,7 @@ class QuedadasService {
       contadorReportes: 0,
       cupoMax: cupoMax,
       descripcion: descripcion.trim(),
-      esVerificado: esVerificado,
+      esVerificado: esVerificadoFinal,
       estado: estado,
       organizador: organizadorFinal,
       plazasLibres: cupoMax,

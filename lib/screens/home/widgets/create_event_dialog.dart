@@ -430,21 +430,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 },
               ),
               const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
-                child: SwitchListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                  title: const Text('Verified Event', style: AppTextStyles.labelLarge),
-                  subtitle: const Text('Event validated by organization.', style: AppTextStyles.bodyMedium),
-                  value: _esVerificado,
-                  onChanged: _guardando
-                      ? null
-                      : (v) => setState(() => _esVerificado = v),
-                ),
-              ),
+
             ],
           ),
         ),
