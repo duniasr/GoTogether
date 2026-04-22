@@ -7,7 +7,7 @@ import 'category_filter.dart';
 import 'event_card.dart';
 import '../../../utils/translations.dart';
 
-class ExploreTab extends StatelessWidget {
+class ExploreTab extends StatefulWidget {
   final QuedadasService service;
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
@@ -22,9 +22,23 @@ class ExploreTab extends StatelessWidget {
   });
 
   @override
+  State<ExploreTab> createState() => _ExploreTabState();
+}
+
+class _ExploreTabState extends State<ExploreTab> {
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Quedada>>(
-      stream: service.escucharQuedadas(),
+      stream: widget.service.escucharQuedadas(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -44,24 +58,30 @@ class ExploreTab extends StatelessWidget {
             snapshot.connectionState == ConnectionState.waiting &&
             allQuedadas.isEmpty;
 
-        final filtered = selectedCategory == 'Todos'
+        final filteredByCategory = widget.selectedCategory == 'Todos'
             ? allQuedadas
             : allQuedadas
                   .where(
                     (q) =>
                         q.tematica.toLowerCase() ==
-                        selectedCategory.toLowerCase(),
+                        widget.selectedCategory.toLowerCase(),
                   )
                   .toList();
+                  
+        final filtered = filteredByCategory.where((q) {
+          if (_searchQuery.isEmpty) return true;
+          return q.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
+        }).toList();
 
         return CustomScrollView(
           slivers: [
             SliverToBoxAdapter(child: _buildHeader()),
+            SliverToBoxAdapter(child: _buildSearchBar()),
             SliverToBoxAdapter(
               child: CategoryFilter(
-                categories: categories,
-                selectedCategory: selectedCategory,
-                onCategorySelected: onCategorySelected,
+                categories: widget.categories,
+                selectedCategory: widget.selectedCategory,
+                onCategorySelected: widget.onCategorySelected,
               ),
             ),
             SliverToBoxAdapter(
@@ -74,9 +94,9 @@ class ExploreTab extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      selectedCategory == 'Todos'
+                      widget.selectedCategory == 'Todos'
                           ? 'Nearby Plans'
-                          : translateCategory(selectedCategory),
+                          : translateCategory(widget.selectedCategory),
                       style: AppTextStyles.headlineMedium,
                     ),
                     if (!isLoading)
@@ -106,115 +126,125 @@ class ExploreTab extends StatelessWidget {
                   100,
                 ),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final q = filtered[index];
-                      final uid = FirebaseAuth.instance.currentUser?.uid;
-                      final email = FirebaseAuth.instance.currentUser?.email;
-                      final isOrganizer =
-                          uid == q.organizador || email == q.organizador;
-                      final isJoined = (uid != null && q.asistentesID.contains(uid)) || isOrganizer;
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final q = filtered[index];
+                    final uid = FirebaseAuth.instance.currentUser?.uid;
+                    final email = FirebaseAuth.instance.currentUser?.email;
+                    final isOrganizer =
+                        uid == q.organizador || email == q.organizador;
+                    final isJoined =
+                        (uid != null && q.asistentesID.contains(uid)) ||
+                        isOrganizer;
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                        child: EventCard(
-                          quedada: q,
-                          isJoined: isJoined,
-                          onDelete: isOrganizer
-                              ? () async {
-                                  final confirmar = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Delete event'),
-                                      content: Text(
-                                        'Are you sure you want to delete "${q.titulo}"?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(false),
-                                          child: const Text('Cancel'),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: EventCard(
+                        quedada: q,
+                        isJoined: isJoined,
+                        onDelete: isOrganizer
+                            ? () async {
+                                final confirmar =
+                                    await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Delete event'),
+                                        content: Text(
+                                          'Are you sure you want to delete "${q.titulo}"?',
                                         ),
-                                        FilledButton(
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: AppColors.error,
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(false),
+                                            child: const Text('Cancel'),
                                           ),
-                                          onPressed: () =>
-                                              Navigator.of(ctx).pop(true),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  ) ?? false;
+                                          FilledButton(
+                                            style: FilledButton.styleFrom(
+                                              backgroundColor: AppColors.error,
+                                            ),
+                                            onPressed: () =>
+                                                Navigator.of(ctx).pop(true),
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ??
+                                    false;
 
-                                  if (!confirmar) return;
-                                  try {
-                                    await service.eliminarQuedada(q.id);
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Event deleted.'),
-                                      ),
-                                    );
-                                  } catch (e) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Error deleting: $e'),
-                                      ),
-                                    );
-                                  }
+                                if (!confirmar) return;
+                                try {
+                                  await widget.service.eliminarQuedada(q.id);
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Event deleted.'),
+                                    ),
+                                  );
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error deleting: $e'),
+                                    ),
+                                  );
                                 }
-                              : null,
-                          actionButton: isJoined ? null : ElevatedButton(
-                            onPressed: q.plazasLibres > 0
-                                ? () async {
-                                    try {
-                                      await service.unirseAQuedada(q.id);
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('You have joined the plan!'),
-                                        ),
-                                      );
-                                    } catch (e) {
-                                      if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text('Error joining: $e'),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                : null,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              disabledBackgroundColor: AppColors.surfaceAlt,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
+                              }
+                            : null,
+                        actionButton: isJoined
+                            ? null
+                            : ElevatedButton(
+                                onPressed: q.plazasLibres > 0
+                                    ? () async {
+                                        try {
+                                          await widget.service.unirseAQuedada(q.id);
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'You have joined the plan!',
+                                              ),
+                                            ),
+                                          );
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                'Error joining: $e',
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  disabledBackgroundColor: AppColors.surfaceAlt,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: Text(
+                                  q.plazasLibres > 0 ? 'Join' : 'Full',
+                                  style: AppTextStyles.button.copyWith(
+                                    color: q.plazasLibres > 0
+                                        ? Colors.white
+                                        : AppColors.textHint,
+                                  ),
+                                ),
                               ),
-                              elevation: 0,
-                            ),
-                            child: Text(
-                              q.plazasLibres > 0 ? 'Join' : 'Full',
-                              style: AppTextStyles.button.copyWith(
-                                color: q.plazasLibres > 0
-                                    ? Colors.white
-                                    : AppColors.textHint,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    childCount: filtered.length,
-                  ),
+                      ),
+                    );
+                  }, childCount: filtered.length),
                 ),
               ),
           ],
@@ -238,7 +268,61 @@ class ExploreTab extends StatelessWidget {
     );
   }
 
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value;
+          });
+        },
+        decoration: InputDecoration(
+          hintText: 'Search plan by name...',
+          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+          prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: AppColors.textHint),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() {
+                      _searchQuery = '';
+                    });
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 0,
+            horizontal: AppSpacing.md,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            borderSide: const BorderSide(color: Color(0xFFEBEFF5), width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            borderSide: const BorderSide(color: AppColors.primary, width: 1),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
+    final isSearching = _searchQuery.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.symmetric(
         vertical: AppSpacing.xxl,
@@ -253,7 +337,7 @@ class ExploreTab extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'No plans in this category',
+            isSearching ? 'No plans found' : 'No plans in this category',
             style: AppTextStyles.headlineSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -261,7 +345,9 @@ class ExploreTab extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Be the first to create one.',
+            isSearching
+                ? 'Try a different search term.'
+                : 'Be the first to create one.',
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),
