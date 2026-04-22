@@ -1,13 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
+import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:profanity_filter/profanity_filter.dart';
 import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart';
+import '../../../utils/bad_words_es.dart';
 import 'location_picker_screen.dart';
 Future<void> showCreateEventDialog(
   // Muestra una ventana emergente para crear un plan nuevo
@@ -148,6 +150,29 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     if (!_formKey.currentState!.validate()) {
       setState(() => _errorMessage = 'Please review the highlighted fields.');
       return;
+    }
+
+    final textoCompleto = '${_tituloCtrl.text} ${_descripcionCtrl.text}'.toLowerCase();
+    
+    final filter = ProfanityFilter.filterAdditionally(badWordsEs);
+    final hasProfanity = filter.hasProfanity(textoCompleto);
+    
+    if (hasProfanity) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Inappropriate Content', style: TextStyle(color: Colors.red)),
+            content: const Text('Inappropriate text detected.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Got it'),
+              ),
+            ],
+          ),
+        );
+        return;
     }
 
     if (_fechaInicio == null || _fechaFin == null) {
