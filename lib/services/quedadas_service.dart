@@ -100,6 +100,7 @@ class QuedadasService {
       esVerificado: esVerificadoFinal,
       estado: estado,
       organizador: organizadorFinal,
+      organizadorId: usuario?.uid ?? '',
       plazasLibres: cupoMax,
       tematica: tematica,
       titulo: titulo.trim(),

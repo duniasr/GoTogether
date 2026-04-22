@@ -130,7 +130,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     final q = filtered[index];
                     final uid = FirebaseAuth.instance.currentUser?.uid;
                     final email = FirebaseAuth.instance.currentUser?.email;
-                    final isOrganizer =
+                    final isOrganizer = (uid != null && uid == q.organizadorId) || 
                         uid == q.organizador || email == q.organizador;
                     final isJoined =
                         (uid != null && q.asistentesID.contains(uid)) ||
