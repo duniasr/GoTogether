@@ -136,29 +136,7 @@ class EventCard extends StatelessWidget {
             ),
           const SizedBox(height: AppSpacing.sm),
 
-          if (quedada.contadorReportes >= 3) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                border: Border.all(color: Colors.red.shade200),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'This event has been reported (${quedada.contadorReportes})',
-                      style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+
 
           Row(
             children: [
@@ -249,7 +227,7 @@ class EventCard extends StatelessWidget {
         return StatefulBuilder(
           builder: (stateContext, setStateDialog) {
             return AlertDialog(
-              title: const Text('Report Event', style: AppTextStyles.headlineMedium),
+              title: const Text('Report event', style: AppTextStyles.headlineMedium),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,

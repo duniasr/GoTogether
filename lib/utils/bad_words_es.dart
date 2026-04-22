@@ -1,4 +1,4 @@
-const List<String> badWordsEs = [
+const List<String> _badWordsEsBase = [
   'asesinar',
   'asesinato',
   'cabron',
@@ -53,3 +53,28 @@ const List<String> badWordsEs = [
   'violencia',
   'zorra',
 ];
+
+final List<String> badWordsEs = _generatePlurals(_badWordsEsBase);
+
+List<String> _generatePlurals(List<String> baseWords) {
+  final Set<String> result = {};
+  for (final word in baseWords) {
+    result.add(word); // Añadir palabra original
+    
+    // Plurales genéricos terminados en vocal o consonante
+    if (word.endsWith('a') || word.endsWith('e') || word.endsWith('i') || word.endsWith('o') || word.endsWith('u') || 
+        word.endsWith('á') || word.endsWith('é') || word.endsWith('í') || word.endsWith('ó') || word.endsWith('ú')) {
+      result.add('${word}s');
+    } else {
+      result.add('${word}es');
+      result.add('${word}s'); // Por si acaso hay anglicismos
+    }
+    
+    // Palabras que pierden tilde al hacerse plurales (ej: cabrón -> cabrones)
+    if (word.endsWith('ón')) {
+      final withoutAccent = word.substring(0, word.length - 2) + 'on';
+      result.add('${withoutAccent}es');
+    }
+  }
+  return result.toList();
+}

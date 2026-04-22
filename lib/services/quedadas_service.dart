@@ -236,15 +236,5 @@ class QuedadasService {
       'contadorReportes': FieldValue.increment(1),
     });
 
-    // Verificar si alcanzó el umbral de 3 reportes
-    final eventRefAux = await _eventsRef.doc(eventoId).get();
-    if (eventRefAux.exists) {
-      final data = eventRefAux.data() as Map<String, dynamic>?;
-      final reportesTotales = data?['contadorReportes'] ?? 0;
-      if (reportesTotales >= 4) {
-        // Auto-eliminación del evento por acumulación de reportes
-        await _eventsRef.doc(eventoId).delete();
-      }
-    }
   }
 }
