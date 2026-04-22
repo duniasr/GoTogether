@@ -1,10 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
+import 'package:http/http.dart' as http;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:profanity_filter/profanity_filter.dart';
 import '../../../app_theme.dart';
 import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
-
+import '../../../utils/bad_words_es.dart';
+import 'location_picker_screen.dart';
 Future<void> showCreateEventDialog(
   // Muestra una ventana emergente para crear un plan nuevo
   BuildContext context,

@@ -32,7 +32,7 @@ class QuedadasService {
   
   Stream<List<Quedada>> escucharQuedadasFuturas() {
     return _eventsRef
-        .where('fechaInicio', isGreaterThanOrEqualTo: Timestamp.now())
+        .where('fechaFin', isGreaterThanOrEqualTo: Timestamp.now())
         .snapshots()
         .map((snapshot) {
       return snapshot.docs

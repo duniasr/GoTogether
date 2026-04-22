@@ -27,11 +27,13 @@ class _MapScreenState extends State<MapScreen> {
 
   // Mapa para guardar la chincheta y su ancla (Offset) exacta
   final Map<String, (BitmapDescriptor, Offset)> _markersIcons = {};
+  late Stream<List<Quedada>> _quedadasStream;
 
   @override
   void initState() {
     super.initState();
     _determinePosition();
+    _quedadasStream = _quedadasService.escucharQuedadasFuturas();
   }
 
   Future<void> _generateIconForEvent(Quedada q) async {
@@ -190,7 +192,7 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder<List<Quedada>>(
-        stream: _quedadasService.escucharQuedadasFuturas(),
+        stream: _quedadasStream,
         builder: (context, snapshot) {
           Set<Marker> markers = {};
           
