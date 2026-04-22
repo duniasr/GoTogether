@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../utils/translations.dart';
+import '../../../services/quedadas_service.dart';
 
 class EventCard extends StatelessWidget {
   final Quedada quedada;
@@ -54,15 +55,36 @@ class EventCard extends StatelessWidget {
               ],
               if (onDelete != null) ...[
                 const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: onDelete,
-                  child: const Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 20,
+                Tooltip(
+                  message: 'Delete plan',
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: GestureDetector(
+                      onTap: onDelete,
+                      child: const Icon(
+                        Icons.delete_outline,
+                        color: AppColors.error,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ),
               ],
+              const SizedBox(width: 8),
+              Tooltip(
+                message: 'Report event',
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => _mostrarDialogoReporte(context),
+                    child: const Icon(
+                      Icons.report_problem_outlined,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -113,6 +135,30 @@ class EventCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           const SizedBox(height: AppSpacing.sm),
+
+          if (quedada.contadorReportes >= 3) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                border: Border.all(color: Colors.red.shade200),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'This event has been reported (${quedada.contadorReportes})',
+                      style: const TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           Row(
             children: [
@@ -190,6 +236,79 @@ class EventCard extends StatelessWidget {
           // === FIN LÓGICA HU-11 ===
         ],
       ),
+    );
+  }
+
+  Future<void> _mostrarDialogoReporte(BuildContext context) async {
+    String motivoSeleccionado = 'Spam';
+    final motivos = ['Spam', 'Inappropriate', 'Dangerous'];
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (stateContext, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Report Event', style: AppTextStyles.headlineMedium),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Please, select a reason for the report:'),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: motivoSeleccionado,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                    items: motivos.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: (v) {
+                      if (v != null) {
+                        setStateDialog(() => motivoSeleccionado = v);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                FilledButton(
+                  style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                  onPressed: () async {
+                    Navigator.of(dialogContext).pop();
+                    try {
+                      final service = QuedadasService();
+                      await service.reportarQuedada(quedada.id, motivoSeleccionado);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Thank you for reporting'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString().replaceAll('Exception: ', '')),
+                            backgroundColor: AppColors.error,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Submit report'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }

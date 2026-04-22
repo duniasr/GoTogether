@@ -202,4 +202,39 @@ class QuedadasService {
       'plazasLibres': FieldValue.increment(1),
     });
   }
+
+  Future<void> reportarQuedada(String eventoId, String motivo) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User is not authenticated');
+
+    final reportesRef = _firestore.collection('reportes_quedadas');
+    final reporteId = '${eventoId}_$uid';
+
+    final docResult = await reportesRef.doc(reporteId).get();
+    if (docResult.exists) {
+      throw Exception('You have already reported this event');
+    }
+
+    await reportesRef.doc(reporteId).set({
+      'eventoId': eventoId,
+      'reportadorId': uid,
+      'motivo': motivo,
+      'fecha': FieldValue.serverTimestamp(),
+    });
+
+    await _eventsRef.doc(eventoId).update({
+      'contadorReportes': FieldValue.increment(1),
+    });
+
+    // Verificar si alcanzó el umbral de 3 reportes
+    final eventRefAux = await _eventsRef.doc(eventoId).get();
+    if (eventRefAux.exists) {
+      final data = eventRefAux.data() as Map<String, dynamic>?;
+      final reportesTotales = data?['contadorReportes'] ?? 0;
+      if (reportesTotales >= 4) {
+        // Auto-eliminación del evento por acumulación de reportes
+        await _eventsRef.doc(eventoId).delete();
+      }
+    }
+  }
 }
