@@ -6,7 +6,7 @@ import '../services/quedadas_service.dart';
 
 class QuedadasPage extends StatefulWidget {
   const QuedadasPage({super.key, QuedadasService? service})
-      : _service = service;
+    : _service = service;
 
   final QuedadasService? _service;
 
@@ -91,7 +91,8 @@ class _QuedadasPageState extends State<QuedadasPage> {
                       controller: organizadorController,
                       decoration: const InputDecoration(
                         labelText: 'Organizador',
-                        hintText: 'Si lo dejas vacío se usará tu usuario actual',
+                        hintText:
+                            'Si lo dejas vacío se usará tu usuario actual',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -195,15 +196,22 @@ class _QuedadasPageState extends State<QuedadasPage> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Fecha de inicio'),
-                      subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(fechaInicio)),
+                      subtitle: Text(
+                        DateFormat('dd/MM/yyyy HH:mm').format(fechaInicio),
+                      ),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: () async {
-                        final picked = await _seleccionarFechaYHora(context, fechaInicio);
+                        final picked = await _seleccionarFechaYHora(
+                          context,
+                          fechaInicio,
+                        );
                         if (picked != null) {
                           setStateDialog(() {
                             fechaInicio = picked;
                             if (fechaFin.isBefore(fechaInicio)) {
-                              fechaFin = fechaInicio.add(const Duration(hours: 2));
+                              fechaFin = fechaInicio.add(
+                                const Duration(hours: 2),
+                              );
                             }
                           });
                         }
@@ -212,10 +220,15 @@ class _QuedadasPageState extends State<QuedadasPage> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Fecha de finalización'),
-                      subtitle: Text(DateFormat('dd/MM/yyyy HH:mm').format(fechaFin)),
+                      subtitle: Text(
+                        DateFormat('dd/MM/yyyy HH:mm').format(fechaFin),
+                      ),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: () async {
-                        final picked = await _seleccionarFechaYHora(context, fechaFin);
+                        final picked = await _seleccionarFechaYHora(
+                          context,
+                          fechaFin,
+                        );
                         if (picked != null) {
                           setStateDialog(() {
                             fechaFin = picked;
@@ -237,13 +250,20 @@ class _QuedadasPageState extends State<QuedadasPage> {
                     final descripcion = descripcionController.text.trim();
                     final organizador = organizadorController.text.trim();
                     final cupoMax = int.tryParse(cupoController.text.trim());
-                    final latitud =
-                        double.tryParse(latitudController.text.trim().replaceAll(',', '.'));
-                    final longitud =
-                        double.tryParse(longitudController.text.trim().replaceAll(',', '.'));
+                    final latitud = double.tryParse(
+                      latitudController.text.trim().replaceAll(',', '.'),
+                    );
+                    final longitud = double.tryParse(
+                      longitudController.text.trim().replaceAll(',', '.'),
+                    );
 
                     final ubicacionValida =
-                        latitud != null && longitud != null && latitud >= -90 && latitud <= 90 && longitud >= -180 && longitud <= 180;
+                        latitud != null &&
+                        longitud != null &&
+                        latitud >= -90 &&
+                        latitud <= 90 &&
+                        longitud >= -180 &&
+                        longitud <= 180;
 
                     if (titulo.isEmpty ||
                         descripcion.isEmpty ||
@@ -291,9 +311,7 @@ class _QuedadasPageState extends State<QuedadasPage> {
                       }
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error al crear el evento: $e'),
-                        ),
+                        SnackBar(content: Text('Error al crear el evento: $e')),
                       );
                     }
                   },
@@ -314,7 +332,10 @@ class _QuedadasPageState extends State<QuedadasPage> {
     longitudController.dispose();
   }
 
-  Future<DateTime?> _seleccionarFechaYHora(BuildContext context, DateTime inicial) async {
+  Future<DateTime?> _seleccionarFechaYHora(
+    BuildContext context,
+    DateTime inicial,
+  ) async {
     final date = await showDatePicker(
       context: context,
       initialDate: inicial,
@@ -335,7 +356,8 @@ class _QuedadasPageState extends State<QuedadasPage> {
   }
 
   Future<void> _eliminarQuedada(Quedada quedada) async {
-    final confirmar = await showDialog<bool>(
+    final confirmar =
+        await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Eliminar evento'),
@@ -364,9 +386,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Evento eliminado.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Evento eliminado.')));
     } catch (e) {
       if (!mounted) {
         return;
@@ -381,9 +403,7 @@ class _QuedadasPageState extends State<QuedadasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Eventos'),
-      ),
+      appBar: AppBar(title: const Text('Eventos')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _mostrarFormularioCrearQuedada,
         icon: const Icon(Icons.add),
@@ -428,7 +448,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
               return Card(
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  title: Text(quedada.titulo.isEmpty ? 'Sin título' : quedada.titulo),
+                  title: Text(
+                    quedada.titulo.isEmpty ? 'Sin título' : quedada.titulo,
+                  ),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Column(
@@ -443,7 +465,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
                               visualDensity: VisualDensity.compact,
                             ),
                             Chip(
-                              label: Text('Estado: ${_capitalizar(quedada.estado)}'),
+                              label: Text(
+                                'Estado: ${_capitalizar(quedada.estado)}',
+                              ),
                               visualDensity: VisualDensity.compact,
                             ),
                             Chip(
@@ -457,13 +481,17 @@ class _QuedadasPageState extends State<QuedadasPage> {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(quedada.descripcion.isEmpty
-                            ? 'Sin descripción'
-                            : quedada.descripcion),
+                        Text(
+                          quedada.descripcion.isEmpty
+                              ? 'Sin descripción'
+                              : quedada.descripcion,
+                        ),
                         const SizedBox(height: 8),
                         Text('Organizador: ${quedada.organizador}'),
                         const SizedBox(height: 4),
-                        Text('Verificado: ${quedada.esVerificado ? 'Sí' : 'No'}'),
+                        Text(
+                          'Verificado: ${quedada.esVerificado ? 'Sí' : 'No'}',
+                        ),
                         const SizedBox(height: 4),
                         Text('Reportes: ${quedada.contadorReportes}'),
                         const SizedBox(height: 4),
@@ -481,7 +509,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
                             Expanded(
                               child: Text(
                                 'Inicio: ${DateFormat('dd/MM/yyyy HH:mm').format(quedada.fechaInicio)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -493,7 +523,9 @@ class _QuedadasPageState extends State<QuedadasPage> {
                             Expanded(
                               child: Text(
                                 'Fin: ${DateFormat('dd/MM/yyyy HH:mm').format(quedada.fechaFin)}',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
