@@ -508,7 +508,7 @@ class _EditDialogState extends State<_EditDialog> {
               const SizedBox(height: AppSpacing.md),
 
               DropdownButtonFormField<String>(
-                value: _estado,
+                initialValue: _estado,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: _estados
                     .map(

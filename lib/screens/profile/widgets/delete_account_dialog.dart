@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../../../app_theme.dart';
 
 class DeleteAccountDialog extends StatefulWidget {
@@ -23,15 +24,56 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
       final batch = db.batch(); 
 
       final quedadasRef = db.collection('quedadas');
+      final notifRef = db.collection('notificaciones');
       
       final queryByUid = await quedadasRef.where('organizador', isEqualTo: user.uid).get();
       for (var doc in queryByUid.docs) {
         batch.update(doc.reference, {'estado': 'cancelado'});
+        
+        final data = doc.data();
+        final asistentes = data['asistentesID'] as List<dynamic>? ?? [];
+        final titulo = data['titulo'] ?? 'Unnamed Plan';
+        final fechaRaw = data['fechaInicio'];
+        String infoFecha = '';
+        if (fechaRaw is Timestamp) {
+          infoFecha = ' (${DateFormat('dd/MM/yyyy HH:mm').format(fechaRaw.toDate())})';
+        }
+        
+        for (final asistenteId in asistentes) {
+          final newNotifRef = notifRef.doc();
+          batch.set(newNotifRef, {
+            'userId': asistenteId,
+            'mensaje': 'The plan "$titulo"$infoFecha has been cancelled because the organizer closed their account.',
+            'fecha': FieldValue.serverTimestamp(),
+            'leida': false,
+            'eventoId': doc.id,
+          });
+        }
       }
 
       final queryByEmail = await quedadasRef.where('organizador', isEqualTo: user.email).get();
       for (var doc in queryByEmail.docs) {
         batch.update(doc.reference, {'estado': 'cancelado'});
+
+        final data = doc.data();
+        final asistentes = data['asistentesID'] as List<dynamic>? ?? [];
+        final titulo = data['titulo'] ?? 'Unnamed Plan';
+        final fechaRaw = data['fechaInicio'];
+        String infoFecha = '';
+        if (fechaRaw is Timestamp) {
+          infoFecha = ' (${DateFormat('dd/MM/yyyy HH:mm').format(fechaRaw.toDate())})';
+        }
+        
+        for (final asistenteId in asistentes) {
+          final newNotifRef = notifRef.doc();
+          batch.set(newNotifRef, {
+            'userId': asistenteId,
+            'mensaje': 'The plan "$titulo"$infoFecha has been cancelled because the organizer closed their account.',
+            'fecha': FieldValue.serverTimestamp(),
+            'leida': false,
+            'eventoId': doc.id,
+          });
+        }
       }
 
       final userDoc = db.collection('users').doc(user.uid);

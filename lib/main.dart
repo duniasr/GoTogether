@@ -6,10 +6,12 @@ import 'app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await NotificationService().init();
   runApp(const MyApp());
 }
 
@@ -35,7 +37,11 @@ class MyApp extends StatelessWidget {
               body: Center(child: CircularProgressIndicator()),
             );
           }
-          return snapshot.hasData ? const HomeScreen() : const LoginScreen();
+          if (snapshot.hasData) {
+            NotificationService().startListening();
+            return const HomeScreen();
+          }
+          return const LoginScreen();
         },
       ),
     );
