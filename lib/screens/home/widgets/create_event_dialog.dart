@@ -59,6 +59,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   bool _esVerificado = false;
   bool _guardando = false;
   String? _errorMessage; 
+  String? _successMessage;
 
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
@@ -196,6 +197,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
 
     setState(() {
       _errorMessage = null; 
+      _successMessage = null;
       _guardando = true;
     });
 
@@ -343,6 +345,8 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                           _latCtrl.text = picked.latitude.toStringAsFixed(6);
                           _lonCtrl.text = picked.longitude.toStringAsFixed(6);
                           _direccionCtrl.text = 'Loading address...';
+                          _errorMessage = null;
+                          _successMessage = 'Location successfully selected';
                         });
                         try {
                           List<Placemark> placemarks = await placemarkFromCoordinates(picked.latitude, picked.longitude);
@@ -406,14 +410,14 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                         setState(() {
                           _latCtrl.text = coords.latitude.toStringAsFixed(6);
                           _lonCtrl.text = coords.longitude.toStringAsFixed(6);
+                          _errorMessage = null;
+                          _successMessage = 'Location successfully selected';
                         });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Ubicación encontrada por texto'), backgroundColor: Colors.green)
-                        );
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('No se pudo encontrar en texto, prueba con el botón "Pick on map"'), backgroundColor: Colors.red)
-                        );
+                        setState(() {
+                          _successMessage = null;
+                          _errorMessage = 'Location not found. Try using "Pick on map"';
+                        });
                       }
                     },
                   )
@@ -421,6 +425,11 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 onChanged: (v) {
                   _latCtrl.clear();
                   _lonCtrl.clear();
+                  if (_successMessage != null) {
+                    setState(() {
+                      _successMessage = null;
+                    });
+                  }
                 },
                 validator: (v) {
                   if (_latCtrl.text.isEmpty || _lonCtrl.text.isEmpty) {
@@ -460,6 +469,33 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                           _errorMessage!,
                           style: const TextStyle(
                             color: AppColors.error,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (_successMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1), 
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _successMessage!,
+                          style: const TextStyle(
+                            color: Colors.green,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),

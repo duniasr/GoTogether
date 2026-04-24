@@ -15,7 +15,7 @@ class AppColors {
   static const Color accent = Color(0xFFFF7A1A);
   static const Color accentLight = Color(0xFFFFF0E6);
 
-  static const Color background = Color(0xFFF7F9FC);
+  static const Color background = Color(0xFFE8F0FF); // Azul clarito
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceAlt = Color(0xFFEEF2F8);
 
@@ -336,12 +336,14 @@ class AppPrimaryButton extends StatelessWidget {
 class CategoryChip extends StatelessWidget {
   final String category;
   final bool selected;
+  final bool isDarkBackground;
   final VoidCallback? onTap;
 
   const CategoryChip({
     super.key,
     required this.category,
     this.selected = false,
+    this.isDarkBackground = false,
     this.onTap,
   });
 
@@ -352,19 +354,23 @@ class CategoryChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs + 2,
+          horizontal: 20,
         ),
         decoration: BoxDecoration(
-          color: selected ? color : color.withOpacity(0.1),
+          color: selected 
+              ? color 
+              : (isDarkBackground ? Colors.white.withOpacity(0.9) : color.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         child: Text(
           translateCategory(category),
-          style: AppTextStyles.labelSmall.copyWith(
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: selected ? FontWeight.bold : FontWeight.w600,
             color: selected ? Colors.white : color,
-            fontWeight: FontWeight.w600,
           ),
         ),
       ),

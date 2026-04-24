@@ -191,18 +191,23 @@ class QuedadasService {
     DateTime? fechaInicio,
     DateTime? fechaFin,
   }) async {
-    // Check if we need to notify about cancellation
-    if (estado == 'cancelada') {
-      final doc = await _eventsRef.doc(eventoId).get();
-      if (doc.exists) {
-        final currentQuedada = Quedada.fromFirestore(doc);
-        if (currentQuedada.estado != 'cancelada' && currentQuedada.asistentesID.isNotEmpty) {
-          final fecha = DateFormat('dd/MM/yyyy HH:mm').format(currentQuedada.fechaInicio);
-          await _enviarNotificacionAAsistentes(
-            currentQuedada,
-            'The plan "${currentQuedada.titulo}" ($fecha) has been cancelled.',
-          );
-        }
+    int? nuevasPlazasLibres;
+    final doc = await _eventsRef.doc(eventoId).get();
+    
+    if (doc.exists) {
+      final currentQuedada = Quedada.fromFirestore(doc);
+      
+      // Calculate new available spots
+      nuevasPlazasLibres = cupoMax - currentQuedada.asistentesID.length;
+      if (nuevasPlazasLibres < 0) nuevasPlazasLibres = 0;
+
+      // Check if we need to notify about cancellation
+      if (estado == 'cancelada' && currentQuedada.estado != 'cancelada' && currentQuedada.asistentesID.isNotEmpty) {
+        final fecha = DateFormat('dd/MM/yyyy HH:mm').format(currentQuedada.fechaInicio);
+        await _enviarNotificacionAAsistentes(
+          currentQuedada,
+          'The plan "${currentQuedada.titulo}" ($fecha) has been cancelled.',
+        );
       }
     }
 
@@ -212,6 +217,7 @@ class QuedadasService {
       'tematica': tematica,
       'cupoMax': cupoMax,
       'estado': estado,
+      if (nuevasPlazasLibres != null) 'plazasLibres': nuevasPlazasLibres,
       'fechaInicio': fechaInicio != null
           ? Timestamp.fromDate(fechaInicio)
           : FieldValue.delete(),
