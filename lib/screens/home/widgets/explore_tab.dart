@@ -73,7 +73,7 @@ class _ExploreTabState extends State<ExploreTab> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Quedada>>(
-      stream: widget.service.escucharQuedadas(),
+      stream: widget.service.escucharQuedadasFuturas(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -166,7 +166,9 @@ class _ExploreTabState extends State<ExploreTab> {
                       widget.selectedCategory == 'Todos'
                           ? 'Nearby Plans'
                           : translateCategory(widget.selectedCategory),
-                      style: AppTextStyles.headlineMedium,
+                      style: AppTextStyles.headlineMedium.copyWith(
+                        color: const Color(0xFFF59E0B), // Amarillo
+                      ),
                     ),
                     if (!isLoading)
                       Text(
