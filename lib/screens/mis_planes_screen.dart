@@ -64,7 +64,10 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
                   AppSpacing.md,
                   0,
                 ),
-                child: Text('My Plans', style: AppTextStyles.displayMedium),
+                child: Text(
+                  'My Plans',
+                  style: AppTextStyles.displayMedium.copyWith(color: const Color(0xFFF59E0B)),
+                ),
               ),
               const TabBar(
                 indicatorColor: AppColors.primary,
