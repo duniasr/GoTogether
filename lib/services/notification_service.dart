@@ -25,6 +25,14 @@ class NotificationService {
       iOS: DarwinInitializationSettings(),
     );
 
+    // Request permissions for Android 13+
+    final androidImplementation =
+        _notificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (androidImplementation != null) {
+      await androidImplementation.requestNotificationsPermission();
+    }
+
     await _notificationsPlugin.initialize(
       settings: initializationSettings,
       onDidReceiveNotificationResponse: (details) {
@@ -76,15 +84,20 @@ class NotificationService {
     if (user == null) return;
 
     _isListening = true;
+    debugPrint('🔔 NotificationService: Started listening for user ${user.uid}');
+    
     FirebaseFirestore.instance
         .collection('notificaciones')
         .where('userId', isEqualTo: user.uid)
         .where('leida', isEqualTo: false)
         .snapshots()
         .listen((snapshot) {
+      debugPrint('🔔 NotificationService: Received snapshot with ${snapshot.docs.length} docs');
       for (var change in snapshot.docChanges) {
+        debugPrint('🔔 NotificationService: Change detected: ${change.type}');
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data()!;
+          debugPrint('🔔 NotificationService: New notification data: $data');
           showNotification(
             id: change.doc.id.hashCode,
             title: 'Plan Cancelled',
@@ -95,6 +108,12 @@ class NotificationService {
           change.doc.reference.update({'leida': true});
         }
       }
-    }, onDone: () => _isListening = false, onError: (_) => _isListening = false);
+    }, onDone: () {
+      debugPrint('🔔 NotificationService: Listener closed');
+      _isListening = false;
+    }, onError: (e) {
+      debugPrint('🔔 NotificationService: Error in listener: $e');
+      _isListening = false;
+    });
   }
 }
