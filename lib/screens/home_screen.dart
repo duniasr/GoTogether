@@ -4,6 +4,7 @@ import '../app_theme.dart';
 import '../models/quedada.dart';
 import '../services/quedadas_service.dart';
 import 'map_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,10 +17,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedCategory = 'Todos';
   int _currentIndex = 0;
 
-  // ── Servicio de quedadas ──
   final QuedadasService _service = QuedadasService();
 
-  // Temáticas disponibles para el formulario
   static const List<String> _tematicas = [
     'Deporte',
     'Naturaleza',
@@ -36,7 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'Otros',
   ];
 
-  // Categorías del filtro superior (incluye las temáticas principales)
   final List<String> _categories = [
     'Todos',
     'Fiesta',
@@ -46,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
     'Aire libre',
   ];
 
-  // Nombre del usuario actual
   String get _userName {
     final user = FirebaseAuth.instance.currentUser;
     if (user?.displayName != null && user!.displayName!.isNotEmpty) {
@@ -59,12 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-       body: SafeArea(
-        child: _currentIndex == 0
-            ? _buildExploreTab()
-            : _buildPlaceholderTab(_currentIndex),
-      ),
-      // ── FAB: Crear quedada ──
+      body: SafeArea(child: _buildCurrentTab()),
       floatingActionButton: _currentIndex == 0
           ? Container(
               decoration: BoxDecoration(
@@ -87,15 +79,25 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-
-      // ── Bottom Navigation ──
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
-  // ────────────────────────────────────────────
-  //  TAB: Explorar — ahora con StreamBuilder
-  // ────────────────────────────────────────────
+  Widget _buildCurrentTab() {
+    switch (_currentIndex) {
+      case 0:
+        return _buildExploreTab();
+      case 1:
+        return const MapScreen();
+      case 2:
+        return _buildPlaceholderTab(_currentIndex);
+      case 3:
+        return const ProfileScreen(showScaffold: false);
+      default:
+        return _buildExploreTab();
+    }
+  }
+
   Widget _buildExploreTab() {
     return StreamBuilder<List<Quedada>>(
       stream: _service.escucharQuedadas(),
@@ -114,27 +116,18 @@ class _HomeScreenState extends State<HomeScreen> {
         }
 
         final allQuedadas = snapshot.data ?? const [];
-        final isLoading =
-            snapshot.connectionState == ConnectionState.waiting && allQuedadas.isEmpty;
+        final isLoading = snapshot.connectionState == ConnectionState.waiting && allQuedadas.isEmpty;
 
-        // Filtramos por categoría seleccionada
         final filtered = _selectedCategory == 'Todos'
             ? allQuedadas
             : allQuedadas
-                .where((q) =>
-                    q.tematica.toLowerCase() ==
-                    _selectedCategory.toLowerCase())
+                .where((q) => q.tematica.toLowerCase() == _selectedCategory.toLowerCase())
                 .toList();
 
         return CustomScrollView(
           slivers: [
-            // Header
             SliverToBoxAdapter(child: _buildHeader()),
-
-            // Chips de categoría
             SliverToBoxAdapter(child: _buildCategoryFilter()),
-
-            // Título sección
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -145,9 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _selectedCategory == 'Todos'
-                          ? 'Planes cercanos'
-                          : _selectedCategory,
+                      _selectedCategory == 'Todos' ? 'Planes cercanos' : _selectedCategory,
                       style: AppTextStyles.headlineMedium,
                     ),
                     if (!isLoading)
@@ -159,8 +150,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
-            // Estado: cargando
             if (isLoading)
               const SliverToBoxAdapter(
                 child: Padding(
@@ -168,18 +157,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
               )
-            // Estado: lista vacía
             else if (filtered.isEmpty)
               SliverToBoxAdapter(child: _buildEmptyState())
-            // Estado: lista con datos
             else
               SliverPadding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  100,
-                ),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 100),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => Padding(
@@ -196,7 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Header con saludo y botón de perfil ──
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -248,7 +229,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Chips de categoría ──
   Widget _buildCategoryFilter() {
     return SizedBox(
       height: 44,
@@ -270,27 +250,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Tarjeta de evento — ahora recibe Quedada real ──
   Widget _buildEventCard(Quedada quedada) {
     final spots = quedada.plazasLibres;
     final maxSpots = quedada.cupoMax;
-    final fillRatio = maxSpots > 0
-        ? ((maxSpots - spots) / maxSpots).clamp(0.0, 1.0)
-        : 0.0;
+    final fillRatio = maxSpots <= 0 ? 0.0 : (spots / maxSpots).clamp(0.0, 1.0);
     final almostFull = spots <= 2 && spots > 0;
 
-    final catColor = AppColors.categoryColors[quedada.tematica] ??
-        AppColors.textSecondary;
+    final catColor = AppColors.categoryColors[quedada.tematica] ?? AppColors.textSecondary;
 
-    final isCurrentUserOrganizer =
-        FirebaseAuth.instance.currentUser?.uid == quedada.organizador ||
+    final isCurrentUserOrganizer = FirebaseAuth.instance.currentUser?.uid == quedada.organizador ||
         FirebaseAuth.instance.currentUser?.email == quedada.organizador;
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Cabecera: título + badge verificado ──
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -304,31 +278,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               if (quedada.esVerificado) ...[
                 const SizedBox(width: 6),
-                const Icon(Icons.verified_rounded,
-                    color: Color(0xFFFFAA00), size: 20),
+                const Icon(Icons.verified_rounded, color: Color(0xFFFFAA00), size: 20),
               ],
-              // Botón eliminar — solo para el organizador
               if (isCurrentUserOrganizer) ...[
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () => _confirmarEliminarQuedada(quedada),
-                  child: const Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 20),
+                  child: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
                 ),
               ],
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Chips: temática + estado ──
           Wrap(
             spacing: 6,
             runSpacing: 4,
             children: [
               CategoryChip(category: quedada.tematica),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(AppRadius.full),
@@ -341,8 +309,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Descripción ──
           if (quedada.descripcion.isNotEmpty)
             Text(
               quedada.descripcion,
@@ -351,12 +317,9 @@ class _HomeScreenState extends State<HomeScreen> {
               overflow: TextOverflow.ellipsis,
             ),
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Organizador ──
           Row(
             children: [
-              const Icon(Icons.person_outline_rounded,
-                  size: 14, color: AppColors.textSecondary),
+              const Icon(Icons.person_outline_rounded, size: 14, color: AppColors.textSecondary),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -370,20 +333,14 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppSpacing.sm),
           const Divider(height: 1),
           const SizedBox(height: AppSpacing.sm),
-
-          // ── Barra de aforo ──
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                spots > 0
-                    ? '$spots ${spots == 1 ? 'plaza libre' : 'plazas libres'}'
-                    : 'Sin plazas',
+                spots > 0 ? '$spots ${spots == 1 ? 'plaza libre' : 'plazas libres'}' : 'Sin plazas',
                 style: AppTextStyles.labelSmall.copyWith(
-                  color:
-                      almostFull ? AppColors.error : AppColors.textSecondary,
-                  fontWeight:
-                      almostFull ? FontWeight.w700 : FontWeight.w500,
+                  color: almostFull ? AppColors.error : AppColors.textSecondary,
+                  fontWeight: almostFull ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
               Text('$maxSpots máx.', style: AppTextStyles.labelSmall),
@@ -400,18 +357,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-
-          // ── Botón unirse ──
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: spots > 0
                   ? () {
-                      // TODO: HU-11 Inscripción
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                              'Te has apuntado a "${quedada.titulo}"'),
+                          content: Text('Te has apuntado a "${quedada.titulo}"'),
                           backgroundColor: AppColors.primary,
                           behavior: SnackBarBehavior.floating,
                         ),
@@ -440,22 +393,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Diálogo de confirmación para eliminar ──
   Future<void> _confirmarEliminarQuedada(Quedada quedada) async {
     final confirmar = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Eliminar evento'),
-            content:
-                Text('¿Seguro que quieres eliminar "${quedada.titulo}"?'),
+            content: Text('¿Seguro que quieres eliminar "${quedada.titulo}"?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
                 child: const Text('Cancelar'),
               ),
               FilledButton(
-                style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.error),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
                 onPressed: () => Navigator.of(context).pop(true),
                 child: const Text('Eliminar'),
               ),
@@ -480,7 +430,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ── Formulario de crear quedada (HU-06) ──
   Future<void> _onCreateEvent() async {
     final tituloCtrl = TextEditingController();
     final descripcionCtrl = TextEditingController();
@@ -547,8 +496,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: latCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                       decoration: const InputDecoration(
                         labelText: 'Latitud *',
                         hintText: 'Ej: 28.1248',
@@ -558,90 +506,73 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     TextField(
                       controller: lonCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
                       decoration: const InputDecoration(
                         labelText: 'Longitud *',
                         hintText: 'Ej: -15.4300',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Evento verificado'),
+                    const SizedBox(height: 12),
+                    CheckboxListTile(
                       value: esVerificado,
-                      onChanged: (v) =>
-                          setStateDialog(() => esVerificado = v),
+                      onChanged: (v) => setStateDialog(() => esVerificado = v ?? false),
+                      title: const Text('Evento verificado'),
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ],
                 ),
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('Cancelar'),
                 ),
-                FilledButton(
+                ElevatedButton(
                   onPressed: () async {
                     final titulo = tituloCtrl.text.trim();
                     final descripcion = descripcionCtrl.text.trim();
                     final cupoMax = int.tryParse(cupoCtrl.text.trim());
-                    final lat = double.tryParse(
-                        latCtrl.text.trim().replaceAll(',', '.'));
-                    final lon = double.tryParse(
-                        lonCtrl.text.trim().replaceAll(',', '.'));
+                    final lat = double.tryParse(latCtrl.text.trim());
+                    final lon = double.tryParse(lonCtrl.text.trim());
 
-                    final ubicacionValida = lat != null &&
-                        lon != null &&
-                        lat >= -90 &&
-                        lat <= 90 &&
-                        lon >= -180 &&
-                        lon <= 180;
-
-                    if (titulo.isEmpty ||
-                        descripcion.isEmpty ||
-                        cupoMax == null ||
-                        cupoMax <= 0 ||
-                        !ubicacionValida) {
+                    if (titulo.isEmpty || descripcion.isEmpty || cupoMax == null || lat == null || lon == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Por favor, completa todos los campos correctamente.'),
-                        ),
+                        const SnackBar(content: Text('Completa todos los campos obligatorios.')),
                       );
                       return;
                     }
 
                     try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      final organizador = user?.displayName?.trim().isNotEmpty == true
+                          ? user!.displayName!.trim()
+                          : (user?.email ?? 'Anónimo');
+
                       await _service.crearQuedada(
                         titulo: titulo,
                         descripcion: descripcion,
-                        organizador: '',
                         tematica: tematica,
+                        organizador: organizador,
                         cupoMax: cupoMax,
-                        latitud: lat!,
-                        longitud: lon!,
-                        estado: 'abierta',
-                        esVerificado: esVerificado,
+                        latitud: lat,
+                        longitud: lon,
+                        esVerificado: esVerificado, estado: 'false',
                       );
 
-                      if (!context.mounted) return;
-                      Navigator.of(context).pop();
+                      if (!mounted) return;
+                      Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('¡Plan creado correctamente!'),
-                        ),
+                        const SnackBar(content: Text('Plan creado correctamente.')),
                       );
                     } catch (e) {
-                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text('Error al crear el plan: $e')),
+                        SnackBar(content: Text('Error al crear el plan: $e')),
                       );
                     }
                   },
-                  child: const Text('Crear plan'),
+                  child: const Text('Crear'),
                 ),
               ],
             );
@@ -649,30 +580,26 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       },
     );
-
-    tituloCtrl.dispose();
-    descripcionCtrl.dispose();
-    cupoCtrl.dispose();
-    latCtrl.dispose();
-    lonCtrl.dispose();
   }
 
-  // ── Estado vacío ──
   Widget _buildEmptyState() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.xxl,
-        horizontal: AppSpacing.lg,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xxl),
       child: Column(
         children: [
-          const Icon(Icons.search_off_rounded,
-              size: 56, color: AppColors.textHint),
-          const SizedBox(height: AppSpacing.md),
+          Container(
+            width: 84,
+            height: 84,
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.search_off_rounded, size: 40, color: AppColors.primary),
+          ),
+          const SizedBox(height: AppSpacing.lg),
           Text(
-            'No hay planes de esta categoría',
-            style: AppTextStyles.headlineSmall
-                .copyWith(color: AppColors.textSecondary),
+            'No hay planes disponibles',
+            style: AppTextStyles.headlineMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -686,7 +613,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Placeholder para otras pestañas ──
   Widget _buildPlaceholderTab(int index) {
     final data = [
       {'icon': Icons.map_rounded, 'label': 'Mapa'},
@@ -702,15 +628,13 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: AppSpacing.md),
           Text(
             '${item['label']} — próximamente',
-            style: AppTextStyles.headlineSmall
-                .copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  // ── Bottom Navigation Bar ──
   Widget _buildBottomNav() {
     return Container(
       decoration: BoxDecoration(
@@ -765,71 +689,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ── Perfil / cerrar sesión ──
   void _onProfileTap() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-      ),
-      builder: (context) => _buildProfileSheet(),
-    );
-  }
-
-  Widget _buildProfileSheet() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceAlt,
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text('Mi cuenta', style: AppTextStyles.headlineMedium),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            FirebaseAuth.instance.currentUser?.email ?? '',
-            style: AppTextStyles.bodyMedium,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const Divider(),
-          const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await FirebaseAuth.instance.signOut();
-              },
-              icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-              label: Text(
-                'Cerrar sesión',
-                style: AppTextStyles.button.copyWith(color: AppColors.error),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                side: const BorderSide(color: AppColors.error),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-      ),
-    );
+    setState(() {
+      _currentIndex = 3;
+    });
   }
 
   static String _capitalizar(String valor) {
