@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../utils/translations.dart';
 import '../../../services/quedadas_service.dart';
+import '../../map_screen.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class EventCard extends StatelessWidget {
   final Quedada quedada;
@@ -139,6 +147,57 @@ class EventCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, size: 16, color: AppColors.textSecondary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MapScreen(
+                          initialCenter: LatLng(quedada.ubicacion.latitude, quedada.ubicacion.longitude),
+                        ),
+                      ),
+                    );
+                  },
+                  child: FutureBuilder<String>(
+                    future: _obtenerDireccion(quedada.ubicacion.latitude, quedada.ubicacion.longitude),
+                    builder: (context, snapshot) {
+                      final locationText = snapshot.data ?? 'Ver ubicación';
+                      return Text(
+                        locationText,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                  ),
+                ),
+              ),
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).get(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasData && snapshot.data?['rol'] == 'admin') {
+                    return IconButton(
+                      icon: const Icon(Icons.edit_location_alt_rounded, color: AppColors.primary, size: 20),
+                      tooltip: 'Admin: Edit Location',
+                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      onPressed: () => _mostrarDialogoModificarUbicacion(context),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
 
           if (quedada.descripcion.isNotEmpty)
             Text(
@@ -166,6 +225,20 @@ class EventCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (quedada.organizadorId == FirebaseAuth.instance.currentUser?.uid)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () => _mostrarAsistentes(context),
+                  icon: const Icon(Icons.people_outline, size: 16, color: AppColors.primary),
+                  label: Text(
+                    'Attendees (${quedada.asistentesID.length})',
+                    style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -228,6 +301,164 @@ class EventCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _mostrarDialogoModificarUbicacion(BuildContext context) {
+    final latController = TextEditingController(text: quedada.ubicacion.latitude.toString());
+    final lonController = TextEditingController(text: quedada.ubicacion.longitude.toString());
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text('Admin: Edit Location', style: AppTextStyles.headlineMedium),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: latController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Latitude'),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: lonController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Longitude'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final lat = double.tryParse(latController.text.trim());
+                final lon = double.tryParse(lonController.text.trim());
+                if (lat == null || lon == null) return;
+
+                await FirebaseFirestore.instance.collection('events').doc(quedada.id).update({
+                  'ubicacion': GeoPoint(lat, lon),
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(dialogContext);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Location updated by Admin'), backgroundColor: AppColors.success),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _mostrarAsistentes(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text('Attendees List', style: AppTextStyles.headlineMedium),
+          content: SizedBox(
+            width: double.maxFinite,
+            height: 300,
+            child: FutureBuilder<QuerySnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .where(FieldPath.documentId, whereIn: quedada.asistentesID.isEmpty ? ['dummy'] : quedada.asistentesID)
+                  .get(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty || quedada.asistentesID.isEmpty) {
+                  return const Center(
+                    child: Text('No attendees yet.', style: AppTextStyles.bodyMedium),
+                  );
+                }
+
+                final users = snapshot.data!.docs;
+                return ListView.builder(
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index].data() as Map<String, dynamic>?;
+                    final nombre = user?['nombre'] ?? 'Anónimo';
+                    final email = user?['email'] ?? 'No email';
+                    final fotoUrl = user?['fotoUrl'];
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppColors.primaryLight,
+                        backgroundImage: fotoUrl != null && fotoUrl.toString().startsWith('http')
+                            ? NetworkImage(fotoUrl) as ImageProvider
+                            : (fotoUrl != null && fotoUrl.toString().isNotEmpty
+                                ? AssetImage(fotoUrl) as ImageProvider
+                                : const AssetImage('assets/images/avatars/default_avatar.png')),
+                      ),
+                      title: Text(nombre, style: AppTextStyles.bodyLarge),
+                      subtitle: Text(email, style: AppTextStyles.labelSmall),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<String> _obtenerDireccion(double lat, double lon) async {
+    if (kIsWeb) {
+      try {
+        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
+        final response = await http.get(url, headers: {
+          'User-Agent': 'GoTogetherApp/1.0'
+        }).timeout(const Duration(seconds: 3));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final displayName = data['display_name'] as String?;
+          if (displayName != null && displayName.isNotEmpty) {
+            final parts = displayName.split(',');
+            if (parts.length > 2) {
+              return '${parts[0].trim()}, ${parts[1].trim()}';
+            }
+            return displayName;
+          }
+        }
+      } catch (_) {}
+      return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+    } else {
+      try {
+        final placemarks = await placemarkFromCoordinates(lat, lon);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final street = p.street ?? "";
+          final locality = p.locality ?? "";
+          if (street.isNotEmpty && locality.isNotEmpty) {
+            return '$street, $locality';
+          } else if (street.isNotEmpty) {
+            return street;
+          } else if (locality.isNotEmpty) {
+            return locality;
+          }
+        }
+      } catch (_) {}
+      return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+    }
   }
 
   Future<void> _mostrarDialogoReporte(BuildContext context) async {

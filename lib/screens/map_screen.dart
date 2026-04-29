@@ -9,7 +9,9 @@ import '../app_theme.dart';
 import 'home/widgets/event_card.dart';
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final LatLng? initialCenter;
+
+  const MapScreen({super.key, this.initialCenter});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -22,7 +24,7 @@ class _MapScreenState extends State<MapScreen> {
   // Definimos las coordenadas del centro de Las Palmas por defecto
   static const LatLng _centroLasPalmas = LatLng(28.1248, -15.4300);
 
-  LatLng _lastKnownPosition = _centroLasPalmas;
+  late LatLng _lastKnownPosition;
   bool _isLoadingLocation = true;
 
   // Mapa para guardar la chincheta y su ancla (Offset) exacta
@@ -32,7 +34,13 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _determinePosition();
+    if (widget.initialCenter != null) {
+      _lastKnownPosition = widget.initialCenter!;
+      _isLoadingLocation = false;
+    } else {
+      _lastKnownPosition = _centroLasPalmas;
+      _determinePosition();
+    }
     _quedadasStream = _quedadasService.escucharQuedadasFuturas();
   }
 
@@ -233,6 +241,18 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.initialCenter != null
+          ? AppBar(
+              backgroundColor: AppColors.surface,
+              foregroundColor: AppColors.textPrimary,
+              elevation: 0,
+              title: const Text('Location on Map', style: AppTextStyles.headlineSmall),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+            )
+          : null,
       body: StreamBuilder<List<Quedada>>(
         stream: _quedadasStream,
         builder: (context, snapshot) {

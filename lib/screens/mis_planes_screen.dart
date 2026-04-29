@@ -255,47 +255,102 @@ class _PlanesTabState extends State<_PlanesTab>
           );
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            100,
-          ),
-          itemCount: planes.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-          itemBuilder: (context, i) {
-            final q = planes[i];
-            return EventCard(
-              quedada: q,
-              isJoined: true,
-              onDelete: widget.esCreador ? () => _eliminar(context, q) : null,
-              actionButton: ElevatedButton(
-                onPressed: widget.esCreador
-                    ? () => _editar(context, q)
-                    : () => _abandonar(context, q),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: widget.esCreador
-                      ? AppColors.primary
-                      : AppColors.error.withOpacity(0.12),
-                  foregroundColor: widget.esCreador
-                      ? Colors.white
-                      : AppColors.error,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  elevation: 0,
+        final now = DateTime.now();
+        final activePlanes = planes.where((q) => q.fechaFin.isAfter(now)).toList();
+        final pastPlanes = planes.where((q) => q.fechaFin.isBefore(now) || q.fechaFin.isAtSameMomentAs(now)).toList();
+
+        return CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.md),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, i) {
+                    final q = activePlanes[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: EventCard(
+                        quedada: q,
+                        isJoined: true,
+                        onDelete: widget.esCreador ? () => _eliminar(context, q) : null,
+                        actionButton: ElevatedButton(
+                          onPressed: widget.esCreador
+                              ? () => _editar(context, q)
+                              : () => _abandonar(context, q),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: widget.esCreador
+                                ? AppColors.primary
+                                : AppColors.error.withOpacity(0.12),
+                            foregroundColor: widget.esCreador
+                                ? Colors.white
+                                : AppColors.error,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            widget.esCreador ? 'Modify' : 'Leave',
+                            style: AppTextStyles.button.copyWith(
+                              color: widget.esCreador ? Colors.white : AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: activePlanes.length,
                 ),
-                child: Text(
-                  widget.esCreador ? 'Modify' : 'Leave',
-                  style: AppTextStyles.button.copyWith(
-                    color: widget.esCreador ? Colors.white : AppColors.error,
+              ),
+            ),
+            if (pastPlanes.isNotEmpty)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                  child: Text(
+                    'Past Plans',
+                    style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-            );
-          },
+            if (pastPlanes.isNotEmpty)
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) {
+                      final q = pastPlanes[i];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: Opacity(
+                          opacity: 0.65,
+                          child: EventCard(
+                            quedada: q,
+                            isJoined: true,
+                            onDelete: null,
+                            actionButton: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceAlt,
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                              ),
+                              child: const Text(
+                                'Past Event (Read Only)',
+                                style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: pastPlanes.length,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
