@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart'; 
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -202,10 +203,13 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     });
 
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      final organizadorNombre = user?.displayName?.isNotEmpty == true ? user!.displayName! : (user?.email ?? 'Desconocido');
+
       await widget.service.crearQuedada(
         titulo: _tituloCtrl.text.trim(),
         descripcion: _descripcionCtrl.text.trim(),
-        organizador: '',
+        organizador: organizadorNombre,
         tematica: _tematica,
         cupoMax: cupoMax,
         latitud: lat,
@@ -281,6 +285,15 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                     : (v) {
                         if (v != null) setState(() => _tematica = v);
                       },
+              ),
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: _esVerificado,
+                onChanged: _guardando ? null : (v) => setState(() => _esVerificado = v ?? false),
+                title: const Text('Verified Event'),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                activeColor: const Color(0xFFF59E0B),
               ),
               const SizedBox(height: 12),
               

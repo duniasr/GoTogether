@@ -4,7 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../app_theme.dart'; 
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool showScaffold;
+
+  const ProfileScreen({super.key, this.showScaffold = true});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -14,7 +16,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
-  
+  final TextEditingController _companyNameController = TextEditingController();
+  final TextEditingController _cifController = TextEditingController();
   final GlobalKey<FormState> _emailFormKey = GlobalKey<FormState>();
   final TextEditingController _currentPasswordForEmailController = TextEditingController();
   final TextEditingController _newEmailInputController = TextEditingController();
@@ -36,8 +39,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   bool _isSaveEnabled = false;
   bool _isLoading = false; 
+  bool _isVerificationLoading = false;
 
   String? _photoUrl; 
+  String _rol = 'usuario';
+  String? _estadoVerificacion;
   
   final List<String> _avataresDisponibles = [
     'assets/images/avatars/avatar1.png',
@@ -63,6 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _bioController.dispose();
+    _companyNameController.dispose();
+    _cifController.dispose();
     _currentPasswordForEmailController.dispose();
     _newEmailInputController.dispose();
     _currentPasswordForPwdController.dispose();
@@ -84,11 +92,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       if (doc.exists && mounted) {
+        final data = doc.data() ?? {};
         setState(() {
-          _nameController.text = doc.data()?['nombre'] ?? user.displayName ?? "";
-          _emailController.text = doc.data()?['email'] ?? user.email ?? "";
-          _photoUrl = doc.data()?['fotoUrl'] ?? user.photoURL;
-          _bioController.text = doc.data()?['bio'] ?? "";
+          _nameController.text = data['nombre'] ?? user.displayName ?? "";
+          _emailController.text = data['email'] ?? user.email ?? "";
+          _photoUrl = data['fotoUrl'] ?? user.photoURL;
+          _bioController.text = data['bio'] ?? "";
+          _companyNameController.text = data['nombreEmpresa'] ?? '';
+          _cifController.text = data['cif'] ?? '';
+          _rol = data['rol'] ?? 'usuario';
+          _estadoVerificacion = data['estadoVerificacion'];
         });
         _validateForm(); 
       }
@@ -344,6 +357,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _submitVerificationRequest() async {
+    if (_companyNameController.text.trim().isEmpty || _cifController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes completar el nombre de empresa y el CIF/NIF.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isVerificationLoading = true);
+    try {
+      final user = FirebaseAuth.instance.currentUser!;
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'nombreEmpresa': _companyNameController.text.trim(),
+        'cif': _cifController.text.trim(),
+        'rol': 'usuario',
+        'estadoVerificacion': 'pendiente',
+        'fechaSolicitudVerificacion': FieldValue.serverTimestamp(),
+        'revisadoPor': FieldValue.delete(),
+        'fechaRevision': FieldValue.delete(),
+      });
+
+      if (mounted) {
+        setState(() {
+          _rol = 'usuario';
+          _estadoVerificacion = 'pendiente';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Solicitud enviada correctamente.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error enviando la solicitud: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isVerificationLoading = false);
+    }
+  }
 
   Future<void> _confirmLogout() async {
     final bool? confirm = await showDialog<bool>(
@@ -455,8 +517,382 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildVerificationSection() {
+    final isVerified = _rol == 'verificado' || _estadoVerificacion == 'aprobado';
+    final isPending = _estadoVerificacion == 'pendiente';
+    final isRejected = _estadoVerificacion == 'rechazado';
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.verified_user_outlined, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Solicitud de verificación',
+                style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (isVerified) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified, color: AppColors.success),
+                  SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Tu cuenta ya está verificada.',
+                      style: AppTextStyles.bodyLarge,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            if (isPending)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.hourglass_top, color: AppColors.warning),
+                    SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Tu solicitud está pendiente de revisión por un administrador.',
+                        style: AppTextStyles.bodyLarge,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (isRejected)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.cancel_outlined, color: AppColors.error),
+                      SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Tu solicitud fue rechazada. Puedes corregir los datos y volver a enviarla.',
+                          style: AppTextStyles.bodyLarge,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            const Text(
+              'Completa estos datos para solicitar la verificación como organizador.',
+              style: AppTextStyles.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _companyNameController,
+              enabled: !isPending && !_isVerificationLoading,
+              decoration: const InputDecoration(
+                labelText: 'Nombre de la Empresa',
+                prefixIcon: Icon(Icons.business),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: _cifController,
+              enabled: !isPending && !_isVerificationLoading,
+              decoration: const InputDecoration(
+                labelText: 'CIF / NIF',
+                prefixIcon: Icon(Icons.badge),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppPrimaryButton(
+              label: isRejected ? 'Reenviar solicitud' : 'Enviar solicitud',
+              isLoading: _isVerificationLoading,
+              onPressed: isPending || _isVerificationLoading ? null : _submitVerificationRequest,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final content = SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: _mostrarSelectorAvatar, 
+            child: Stack(
+              alignment: Alignment.bottomRight, 
+              children: [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: AppColors.primaryLight,
+                  backgroundImage: _photoUrl != null && _photoUrl!.isNotEmpty
+                      ? (_photoUrl!.startsWith('http')
+                          ? NetworkImage(_photoUrl!) as ImageProvider
+                          : AssetImage(_photoUrl!))
+                      : const AssetImage('assets/images/avatars/default_avatar.png'),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                  child: const Icon(Icons.edit, color: Colors.white, size: 20),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text("Tap to choose avatar", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+          const SizedBox(height: AppSpacing.xl),
+
+          AppCard(
+            child: Column(
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(labelText: 'Full name'),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _emailController,
+                  readOnly: true, 
+                  decoration: const InputDecoration(
+                    labelText: 'Email Address',
+                    hintText: 'Use the section below to change it'
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: _bioController,
+                  maxLines: 4,
+                  maxLength: 150,
+                  decoration: const InputDecoration(
+                    labelText: 'About me',
+                    hintText: 'e.g., I love hiking and board games...',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: AppSpacing.xl),
+
+          AppPrimaryButton(
+            label: 'Save Changes',
+            isLoading: _isLoading,
+            onPressed: _isSaveEnabled && !_isLoading ? _guardarDatosBasicos : null,
+          ),
+          
+          const SizedBox(height: AppSpacing.xl),
+          _buildVerificationSection(),
+
+          const SizedBox(height: AppSpacing.xl),
+          const Divider(),
+          const SizedBox(height: AppSpacing.xl),
+
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: ExpansionTile(
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text('Change Email', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
+              leading: const Icon(Icons.email_outlined, color: AppColors.primary),
+              iconColor: AppColors.primary,
+              childrenPadding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                Form(
+                  key: _emailFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text("For security, enter your current password to confirm.", style: AppTextStyles.bodyMedium),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _currentPasswordForEmailController,
+                        obscureText: _obscurePwdEmail,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscurePwdEmail ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
+                            onPressed: () => setState(() => _obscurePwdEmail = !_obscurePwdEmail),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (_passwordAuthErrorForEmail != null) return _passwordAuthErrorForEmail;
+                          return null;
+                        },
+                        onChanged: (val) {
+                          if (_passwordAuthErrorForEmail != null) setState(() => _passwordAuthErrorForEmail = null);
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _newEmailInputController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'New Email Address'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (!value.contains('@')) return 'Invalid email';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppPrimaryButton(
+                        label: 'Update Email',
+                        isLoading: _isChangingEmail,
+                        onPressed: _isChangingEmail ? null : _actualizarCorreo,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: ExpansionTile(
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: Text('Change Password', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
+              leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primary),
+              iconColor: AppColors.primary,
+              childrenPadding: const EdgeInsets.all(AppSpacing.md),
+              children: [
+                Form(
+                  key: _passwordFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _currentPasswordForPwdController,
+                        obscureText: _obscureCurrentPwd,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureCurrentPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
+                            onPressed: () => setState(() => _obscureCurrentPwd = !_obscureCurrentPwd),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (_passwordAuthErrorForPwd != null) return _passwordAuthErrorForPwd;
+                          return null;
+                        },
+                        onChanged: (val) {
+                          if (_passwordAuthErrorForPwd != null) setState(() => _passwordAuthErrorForPwd = null);
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _newPasswordController,
+                        obscureText: _obscureNewPwd,
+                        decoration: InputDecoration(
+                          labelText: 'New Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureNewPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
+                            onPressed: () => setState(() => _obscureNewPwd = !_obscureNewPwd),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (value.length < 6) return 'Minimum 6 characters';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirmPwd,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm New Password',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscureConfirmPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
+                            onPressed: () => setState(() => _obscureConfirmPwd = !_obscureConfirmPwd),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value != _newPasswordController.text) return 'Passwords do not match';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppPrimaryButton(
+                        label: 'Update Password',
+                        isLoading: _isChangingPassword,
+                        onPressed: _isChangingPassword ? null : _actualizarPassword,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.sm,
+            alignment: WrapAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: const BorderSide(color: AppColors.textHint),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                ),
+                onPressed: _isLoading ? null : _confirmLogout,
+                icon: const Icon(Icons.logout_rounded, size: 18),
+                label: const Text('Log out', style: TextStyle(fontSize: 14)),
+              ),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                ),
+                onPressed: _isLoading ? null : _showDeleteConfirmationDialog,
+                icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                label: const Text('Delete account', style: TextStyle(fontSize: 14)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (!widget.showScaffold) {
+      return content;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -464,251 +900,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('My Profile', style: AppTextStyles.headlineMedium),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          children: [
-            GestureDetector(
-              onTap: _mostrarSelectorAvatar, 
-              child: Stack(
-                alignment: Alignment.bottomRight, 
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: AppColors.primaryLight,
-                    backgroundImage: _photoUrl != null && _photoUrl!.isNotEmpty
-                        ? (_photoUrl!.startsWith('http')
-                            ? NetworkImage(_photoUrl!) as ImageProvider
-                            : AssetImage(_photoUrl!))
-                        : const AssetImage('assets/images/avatars/default_avatar.png'),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 20),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text("Tap to choose avatar", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
-            const SizedBox(height: AppSpacing.xl),
-
-            AppCard(
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(labelText: 'Full name'),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _emailController,
-                    readOnly: true, 
-                    decoration: const InputDecoration(
-                      labelText: 'Email Address',
-                      hintText: 'Use the section below to change it'
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextField(
-                    controller: _bioController,
-                    maxLines: 4,
-                    maxLength: 150,
-                    decoration: const InputDecoration(
-                      labelText: 'About me',
-                      hintText: 'e.g., I love hiking and board games...',
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: AppSpacing.xl),
-
-            AppPrimaryButton(
-              label: 'Save Changes',
-              isLoading: _isLoading,
-              onPressed: _isSaveEnabled && !_isLoading ? _guardarDatosBasicos : null,
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-            const Divider(),
-            const SizedBox(height: AppSpacing.xl),
-
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ExpansionTile(
-                shape: const Border(),
-                collapsedShape: const Border(),
-                title: Text('Change Email', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
-                leading: const Icon(Icons.email_outlined, color: AppColors.primary),
-                iconColor: AppColors.primary,
-                childrenPadding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  Form(
-                    key: _emailFormKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Text("For security, enter your current password to confirm.", style: AppTextStyles.bodyMedium),
-                        const SizedBox(height: AppSpacing.md),
-                        TextFormField(
-                          controller: _currentPasswordForEmailController,
-                          obscureText: _obscurePwdEmail,
-                          decoration: InputDecoration(
-                            labelText: 'Current Password',
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscurePwdEmail ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                              onPressed: () => setState(() => _obscurePwdEmail = !_obscurePwdEmail),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Required';
-                            if (_passwordAuthErrorForEmail != null) return _passwordAuthErrorForEmail;
-                            return null;
-                          },
-                          onChanged: (val) {
-                            if (_passwordAuthErrorForEmail != null) setState(() => _passwordAuthErrorForEmail = null);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextFormField(
-                          controller: _newEmailInputController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(labelText: 'New Email Address'),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Required';
-                            if (!value.contains('@')) return 'Invalid email';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppPrimaryButton(
-                          label: 'Update Email',
-                          isLoading: _isChangingEmail,
-                          onPressed: _isChangingEmail ? null : _actualizarCorreo,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: ExpansionTile(
-                shape: const Border(),
-                collapsedShape: const Border(),
-                title: Text('Change Password', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
-                leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primary),
-                iconColor: AppColors.primary,
-                childrenPadding: const EdgeInsets.all(AppSpacing.md),
-                children: [
-                  Form(
-                    key: _passwordFormKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextFormField(
-                          controller: _currentPasswordForPwdController,
-                          obscureText: _obscureCurrentPwd,
-                          decoration: InputDecoration(
-                            labelText: 'Current Password',
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscureCurrentPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                              onPressed: () => setState(() => _obscureCurrentPwd = !_obscureCurrentPwd),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Required';
-                            if (_passwordAuthErrorForPwd != null) return _passwordAuthErrorForPwd;
-                            return null;
-                          },
-                          onChanged: (val) {
-                            if (_passwordAuthErrorForPwd != null) setState(() => _passwordAuthErrorForPwd = null);
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextFormField(
-                          controller: _newPasswordController,
-                          obscureText: _obscureNewPwd,
-                          decoration: InputDecoration(
-                            labelText: 'New Password',
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscureNewPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                              onPressed: () => setState(() => _obscureNewPwd = !_obscureNewPwd),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Required';
-                            if (value.length < 6) return 'Minimum 6 characters';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPwd,
-                          decoration: InputDecoration(
-                            labelText: 'Confirm New Password',
-                            suffixIcon: IconButton(
-                              icon: Icon(_obscureConfirmPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
-                              onPressed: () => setState(() => _obscureConfirmPwd = !_obscureConfirmPwd),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value != _newPasswordController.text) return 'Passwords do not match';
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        AppPrimaryButton(
-                          label: 'Update Password',
-                          isLoading: _isChangingPassword,
-                          onPressed: _isChangingPassword ? null : _actualizarPassword,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-
-            Wrap(
-              spacing: AppSpacing.md,
-              runSpacing: AppSpacing.sm,
-              alignment: WrapAlignment.center,
-              children: [
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    side: const BorderSide(color: AppColors.textHint),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  ),
-                  onPressed: _isLoading ? null : _confirmLogout,
-                  icon: const Icon(Icons.logout_rounded, size: 18),
-                  label: const Text('Log out', style: TextStyle(fontSize: 14)),
-                ),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  ),
-                  onPressed: _isLoading ? null : _showDeleteConfirmationDialog,
-                  icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                  label: const Text('Delete account', style: TextStyle(fontSize: 14)),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+      body: content,
     );
   }
 }

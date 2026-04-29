@@ -26,12 +26,17 @@ class _AuthFormState extends State<AuthForm> {
   final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _companyNameController = TextEditingController();
   final TextEditingController _cifController = TextEditingController();
+  final TextEditingController _adminCodeController = TextEditingController();
+
+  static const String _adminSecretCode = '1515453820';
 
   bool _isVerifiedOrganizer = false;
+  bool _isAdmin = false;
   bool _isLoading = false;
 
   String? _backendEmailError;
   String? _backendPasswordError;
+  String? _backendAdminCodeError;
 
   @override
   void didUpdateWidget(AuthForm oldWidget) {
@@ -44,8 +49,12 @@ class _AuthFormState extends State<AuthForm> {
       _confirmPasswordController.clear();
       _companyNameController.clear();
       _cifController.clear();
+      _adminCodeController.clear();
       _backendEmailError = null;
       _backendPasswordError = null;
+      _backendAdminCodeError = null;
+      _isVerifiedOrganizer = false;
+      _isAdmin = false;
     }
   }
 
@@ -57,6 +66,7 @@ class _AuthFormState extends State<AuthForm> {
     _confirmPasswordController.dispose();
     _companyNameController.dispose();
     _cifController.dispose();
+    _adminCodeController.dispose();
     super.dispose();
   }
 
@@ -80,6 +90,7 @@ class _AuthFormState extends State<AuthForm> {
     setState(() {
       _backendEmailError = null;
       _backendPasswordError = null;
+      _backendAdminCodeError = null;
     });
 
     if (!_formKey.currentState!.validate()) {
@@ -102,6 +113,15 @@ class _AuthFormState extends State<AuthForm> {
         UserCredential user = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: email, password: password
         );
+        if (_isAdmin && _adminCodeController.text.trim() != _adminSecretCode) {
+          await user.user?.delete();
+          setState(() {
+            _backendAdminCodeError = 'Código de administrador incorrecto';
+          });
+          _formKey.currentState!.validate();
+          return;
+        }
+
         await user.user!.sendEmailVerification();
         
         Map<String, dynamic> userData = {
@@ -109,13 +129,16 @@ class _AuthFormState extends State<AuthForm> {
           'email': email,
           'puntos': 0,
           'fechaRegistro': DateTime.now(),
-          'rol': _isVerifiedOrganizer ? 'verificado' : 'usuario',
+          'rol': _isAdmin ? 'admin' : 'usuario',
         };
 
-        if (_isVerifiedOrganizer) {
+        if (_isAdmin) {
+          userData['estadoVerificacion'] = null;
+        } else if (_isVerifiedOrganizer) {
           userData['nombreEmpresa'] = _companyNameController.text.trim();
           userData['cif'] = _cifController.text.trim();
           userData['estadoVerificacion'] = 'pendiente';
+          userData['fechaSolicitudVerificacion'] = FieldValue.serverTimestamp();
         }
 
         await FirebaseFirestore.instance.collection('users').doc(user.user!.uid).set(userData);
@@ -276,14 +299,41 @@ class _AuthFormState extends State<AuthForm> {
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       boxShadow: AppShadows.card,
                     ),
-                    child: SwitchListTile(
-                      title: const Text("I am a Verified Organizer", style: AppTextStyles.labelLarge),
-                      value: _isVerifiedOrganizer,
-                      activeColor: AppColors.primary,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                      onChanged: (bool value) {
-                        setState(() { _isVerifiedOrganizer = value; });
-                      },
+                    child: Column(
+                      children: [
+                        SwitchListTile(
+                          title: const Text("I am a Verified Organizer", style: AppTextStyles.labelLarge),
+                          value: _isVerifiedOrganizer,
+                          activeColor: AppColors.primary,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          onChanged: (bool value) {
+                            setState(() {
+                              _isVerifiedOrganizer = value;
+                              if (value) {
+                                _isAdmin = false;
+                                _adminCodeController.clear();
+                                _backendAdminCodeError = null;
+                              }
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text("I am an Admin", style: AppTextStyles.labelLarge),
+                          value: _isAdmin,
+                          activeColor: AppColors.primary,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                          onChanged: (bool value) {
+                            setState(() {
+                              _isAdmin = value;
+                              if (value) {
+                                _isVerifiedOrganizer = false;
+                                _companyNameController.clear();
+                                _cifController.clear();
+                              }
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -313,6 +363,37 @@ class _AuthFormState extends State<AuthForm> {
                           validator: (value) {
                             if (_isVerifiedOrganizer && (value == null || value.trim().isEmpty)) {
                               return "VAT number is required";
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                    ),
+                  if (_isAdmin)
+                    Column(
+                      children: [
+                        TextFormField(
+                          controller: _adminCodeController,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: "Admin Code",
+                            prefixIcon: Icon(Icons.admin_panel_settings),
+                          ),
+                          onChanged: (_) {
+                            if (_backendAdminCodeError != null) {
+                              setState(() {
+                                _backendAdminCodeError = null;
+                              });
+                              _formKey.currentState!.validate();
+                            }
+                          },
+                          validator: (value) {
+                            if (_isAdmin && (value == null || value.trim().isEmpty)) {
+                              return "Admin code is required";
+                            }
+                            if (_backendAdminCodeError != null) {
+                              return _backendAdminCodeError;
                             }
                             return null;
                           },
