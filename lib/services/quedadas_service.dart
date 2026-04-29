@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 import '../models/quedada.dart';
 
@@ -12,7 +13,10 @@ class QuedadasService {
   final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>> get _eventsRef =>
-      _firestore.collection('events');
+      _firestore.collection('quedadas');
+
+  CollectionReference<Map<String, dynamic>> get _notifRef =>
+      _firestore.collection('notificaciones');
 
   // Escucha todos los eventos de Firestore en tiempo real para mantener la lista actualizada
   Stream<List<Quedada>> escucharQuedadas() {
@@ -100,6 +104,7 @@ class QuedadasService {
       esVerificado: esVerificadoFinal,
       estado: estado,
       organizador: organizadorFinal,
+      organizadorId: usuario?.uid ?? '',
       plazasLibres: cupoMax,
       tematica: tematica,
       titulo: titulo.trim(),
@@ -113,7 +118,33 @@ class QuedadasService {
 
   // Borra un evento específico de la base de datos
   Future<void> eliminarQuedada(String eventoId) async {
+    final doc = await _eventsRef.doc(eventoId).get();
+    if (doc.exists) {
+      final quedada = Quedada.fromFirestore(doc);
+      if (quedada.asistentesID.isNotEmpty) {
+        final fecha = DateFormat('dd/MM/yyyy HH:mm').format(quedada.fechaInicio);
+        await _enviarNotificacionAAsistentes(
+          quedada,
+          'The plan "${quedada.titulo}" ($fecha) has been deleted by the organizer.',
+        );
+      }
+    }
     await _eventsRef.doc(eventoId).delete();
+  }
+
+  Future<void> _enviarNotificacionAAsistentes(Quedada quedada, String mensaje) async {
+    final batch = _firestore.batch();
+    for (final userId in quedada.asistentesID) {
+      final newNotifRef = _notifRef.doc();
+      batch.set(newNotifRef, {
+        'userId': userId,
+        'mensaje': mensaje,
+        'fecha': FieldValue.serverTimestamp(),
+        'leida': false,
+        'eventoId': quedada.id,
+      });
+    }
+    await batch.commit();
   }
 
   // Retorna únicamente los eventos creados por el usuario activo
@@ -160,12 +191,33 @@ class QuedadasService {
     DateTime? fechaInicio,
     DateTime? fechaFin,
   }) async {
+    int? nuevasPlazasLibres;
+    final doc = await _eventsRef.doc(eventoId).get();
+    
+    if (doc.exists) {
+      final currentQuedada = Quedada.fromFirestore(doc);
+      
+      // Calculate new available spots
+      nuevasPlazasLibres = cupoMax - currentQuedada.asistentesID.length;
+      if (nuevasPlazasLibres < 0) nuevasPlazasLibres = 0;
+
+      // Check if we need to notify about cancellation
+      if (estado == 'cancelada' && currentQuedada.estado != 'cancelada' && currentQuedada.asistentesID.isNotEmpty) {
+        final fecha = DateFormat('dd/MM/yyyy HH:mm').format(currentQuedada.fechaInicio);
+        await _enviarNotificacionAAsistentes(
+          currentQuedada,
+          'The plan "${currentQuedada.titulo}" ($fecha) has been cancelled.',
+        );
+      }
+    }
+
     await _eventsRef.doc(eventoId).update({
       'titulo': titulo.trim(),
       'descripcion': descripcion.trim(),
       'tematica': tematica,
       'cupoMax': cupoMax,
       'estado': estado,
+      if (nuevasPlazasLibres != null) 'plazasLibres': nuevasPlazasLibres,
       'fechaInicio': fechaInicio != null
           ? Timestamp.fromDate(fechaInicio)
           : FieldValue.delete(),

@@ -6,6 +6,7 @@ import '../../../services/quedadas_service.dart';
 import 'category_filter.dart';
 import 'event_card.dart';
 import '../../../utils/translations.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ExploreTab extends StatefulWidget {
   final QuedadasService service;
@@ -28,6 +29,40 @@ class ExploreTab extends StatefulWidget {
 class _ExploreTabState extends State<ExploreTab> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  Position? _currentPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    try {
+      final position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+        });
+      }
+    } catch (e) {
+      // Ignore exceptions if location cannot be fetched
+    }
+  }
 
   @override
   void dispose() {
@@ -38,7 +73,7 @@ class _ExploreTabState extends State<ExploreTab> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Quedada>>(
-      stream: widget.service.escucharQuedadas(),
+      stream: widget.service.escucharQuedadasFuturas(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -73,15 +108,49 @@ class _ExploreTabState extends State<ExploreTab> {
           return q.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
         }).toList();
 
+        if (_currentPosition != null) {
+          filtered.sort((a, b) {
+            final distA = Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              a.ubicacion.latitude,
+              a.ubicacion.longitude,
+            );
+            final distB = Geolocator.distanceBetween(
+              _currentPosition!.latitude,
+              _currentPosition!.longitude,
+              b.ubicacion.latitude,
+              b.ubicacion.longitude,
+            );
+            return distA.compareTo(distB);
+          });
+        }
+
         return CustomScrollView(
           slivers: [
-            SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildSearchBar()),
             SliverToBoxAdapter(
-              child: CategoryFilter(
-                categories: widget.categories,
-                selectedCategory: widget.selectedCategory,
-                onCategorySelected: widget.onCategorySelected,
+              child: Container(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildHeader(),
+                    _buildSearchBar(),
+                    const SizedBox(height: AppSpacing.sm),
+                    CategoryFilter(
+                      categories: widget.categories,
+                      selectedCategory: widget.selectedCategory,
+                      onCategorySelected: widget.onCategorySelected,
+                    ),
+                  ],
+                ),
               ),
             ),
             SliverToBoxAdapter(
@@ -97,7 +166,9 @@ class _ExploreTabState extends State<ExploreTab> {
                       widget.selectedCategory == 'Todos'
                           ? 'Nearby Plans'
                           : translateCategory(widget.selectedCategory),
-                      style: AppTextStyles.headlineMedium,
+                      style: AppTextStyles.headlineMedium.copyWith(
+                        color: const Color(0xFFF59E0B), // Amarillo
+                      ),
                     ),
                     if (!isLoading)
                       Text(
@@ -130,7 +201,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     final q = filtered[index];
                     final uid = FirebaseAuth.instance.currentUser?.uid;
                     final email = FirebaseAuth.instance.currentUser?.email;
-                    final isOrganizer =
+                    final isOrganizer = (uid != null && uid == q.organizadorId) || 
                         uid == q.organizador || email == q.organizador;
                     final isJoined =
                         (uid != null && q.asistentesID.contains(uid)) ||
@@ -192,7 +263,7 @@ class _ExploreTabState extends State<ExploreTab> {
                         actionButton: isJoined
                             ? null
                             : ElevatedButton(
-                                onPressed: q.plazasLibres > 0
+                                onPressed: (q.plazasLibres > 0 && q.estado == 'abierta')
                                     ? () async {
                                         try {
                                           await widget.service.unirseAQuedada(q.id);
@@ -222,7 +293,8 @@ class _ExploreTabState extends State<ExploreTab> {
                                     : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  disabledBackgroundColor: AppColors.surfaceAlt,
+                                  disabledBackgroundColor: AppColors.error,
+                                  disabledForegroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 12,
                                   ),
@@ -234,11 +306,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                   elevation: 0,
                                 ),
                                 child: Text(
-                                  q.plazasLibres > 0 ? 'Join' : 'Full',
+                                  (q.plazasLibres > 0 && q.estado == 'abierta') 
+                                      ? 'Join' 
+                                      : (q.estado == 'cerrada' ? 'Closed' : 'Full'),
                                   style: AppTextStyles.button.copyWith(
-                                    color: q.plazasLibres > 0
-                                        ? Colors.white
-                                        : AppColors.textHint,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -263,7 +335,7 @@ class _ExploreTabState extends State<ExploreTab> {
       ),
       child: Text(
         'GoTogether',
-        style: AppTextStyles.displayMedium.copyWith(color: AppColors.primary),
+        style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
       ),
     );
   }

@@ -422,7 +422,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final db = FirebaseFirestore.instance;
 
                       // Borramos los eventos del usuario, su perfil de base de datos y su cuenta de autenticación
-                      final queryByName = await db.collection('events').where('organizador', isEqualTo: _nameController.text.trim()).get();
+                      final queryByName = await db.collection('quedadas').where('organizador', isEqualTo: _nameController.text.trim()).get();
                       for (final doc in queryByName.docs) {
                         await doc.reference.delete();
                       }

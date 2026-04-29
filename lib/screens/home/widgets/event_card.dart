@@ -94,19 +94,32 @@ class EventCard extends StatelessWidget {
             runSpacing: 4,
             children: [
               CategoryChip(category: quedada.tematica),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                ),
-                child: Text(
-                  translateStatus(quedada.estado),
-                  style: AppTextStyles.labelSmall,
-                ),
+              Builder(
+                builder: (context) {
+                  final bool isOpen = quedada.estado == 'abierta' && spots > 0;
+                  final bool isFull = spots <= 0 && quedada.estado != 'cerrada' && quedada.estado != 'cancelada';
+                  final String statusText = isFull ? 'Full' : translateStatus(quedada.estado);
+                  final Color bgColor = isOpen ? AppColors.success.withOpacity(0.15) : AppColors.error.withOpacity(0.15);
+                  final Color textColor = isOpen ? AppColors.success : AppColors.error;
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }
               ),
             ],
           ),
@@ -186,7 +199,13 @@ class EventCard extends StatelessWidget {
           ),
           
           // === INICIO LÓGICA HU-11 (AFOROS) ===
-          if (spots <= 0 && !isJoined) ...[
+          if (actionButton != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: actionButton!,
+            ),
+          ] else if (spots <= 0 && !isJoined) ...[
             const SizedBox(height: AppSpacing.md),
             Container(
               width: double.infinity,
@@ -203,12 +222,6 @@ class EventCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-          ] else if (actionButton != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            SizedBox(
-              width: double.infinity,
-              child: actionButton!,
             ),
           ],
           // === FIN LÓGICA HU-11 ===

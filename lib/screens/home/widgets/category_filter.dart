@@ -28,6 +28,7 @@ class CategoryFilter extends StatelessWidget {
           return CategoryChip(
             category: cat,
             selected: selected,
+            isDarkBackground: true,
             onTap: () => onCategorySelected(cat),
           );
         },

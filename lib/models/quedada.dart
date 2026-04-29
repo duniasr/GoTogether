@@ -11,6 +11,7 @@ class Quedada {
     required this.esVerificado,
     required this.estado,
     required this.organizador,
+    required this.organizadorId,
     required this.plazasLibres,
     required this.tematica,
     required this.titulo,
@@ -27,6 +28,7 @@ class Quedada {
   final bool esVerificado;
   final String estado;
   final String organizador;
+  final String organizadorId;
   final int plazasLibres;
   final String tematica;
   final String titulo;
@@ -54,6 +56,7 @@ class Quedada {
       esVerificado: data['esVerificado'] as bool? ?? false,
       estado: data['estado'] as String? ?? 'abierta',
       organizador: data['organizador'] as String? ?? 'anonimo',
+      organizadorId: data['organizadorId'] as String? ?? '',
       plazasLibres: (data['plazasLibres'] as num?)?.toInt() ?? 0,
       tematica: data['tematica'] as String? ?? 'Otros',
       titulo: data['titulo'] as String? ?? '',
@@ -76,6 +79,7 @@ class Quedada {
       'esVerificado': esVerificado,
       'estado': estado,
       'organizador': organizador,
+      'organizadorId': organizadorId,
       'plazasLibres': plazasLibres,
       'tematica': tematica,
       'titulo': titulo,
