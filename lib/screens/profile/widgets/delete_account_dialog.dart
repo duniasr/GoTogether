@@ -23,7 +23,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
       final db = FirebaseFirestore.instance;
       final batch = db.batch(); 
 
-      final quedadasRef = db.collection('quedadas');
+      final quedadasRef = db.collection('events');
       final notifRef = db.collection('notificaciones');
       
       final queryByUid = await quedadasRef.where('organizador', isEqualTo: user.uid).get();

@@ -13,7 +13,7 @@ class QuedadasService {
   final FirebaseAuth _auth;
 
   CollectionReference<Map<String, dynamic>> get _eventsRef =>
-      _firestore.collection('quedadas');
+      _firestore.collection('events');
 
   CollectionReference<Map<String, dynamic>> get _notifRef =>
       _firestore.collection('notificaciones');
