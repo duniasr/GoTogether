@@ -132,7 +132,15 @@ class _ExploreTabState extends State<ExploreTab> {
               child: Container(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF12467A), // AppColors.primaryDark
+                      AppColors.primary,
+                      Color(0xFF2E85D4), // Slightly lighter blue
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -318,7 +326,7 @@ class _ExploreTabState extends State<ExploreTab> {
                                       elevation: 0,
                                       padding: const EdgeInsets.symmetric(vertical: 12),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                                        borderRadius: BorderRadius.circular(AppRadius.md),
                                       ),
                                     ),
                                     child: Text(
@@ -368,7 +376,7 @@ class _ExploreTabState extends State<ExploreTab> {
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(
-                                      AppRadius.sm,
+                                      AppRadius.md,
                                     ),
                                   ),
                                   elevation: 0,
@@ -491,10 +499,17 @@ class _ExploreTabState extends State<ExploreTab> {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.search_off_rounded,
-            size: 56,
-            color: AppColors.textHint,
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: const BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isSearching ? Icons.search_off_rounded : Icons.event_busy_rounded,
+              size: 48,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(

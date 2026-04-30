@@ -39,6 +39,7 @@ class EventCard extends StatelessWidget {
         AppColors.categoryColors[quedada.tematica] ?? AppColors.textSecondary;
 
     return AppCard(
+      leftBorderColor: catColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

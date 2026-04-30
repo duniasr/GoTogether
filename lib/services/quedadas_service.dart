@@ -190,6 +190,8 @@ class QuedadasService {
     required String estado,
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    double? latitud,
+    double? longitud,
   }) async {
     int? nuevasPlazasLibres;
     final doc = await _eventsRef.doc(eventoId).get();
@@ -218,6 +220,7 @@ class QuedadasService {
       'cupoMax': cupoMax,
       'estado': estado,
       if (nuevasPlazasLibres != null) 'plazasLibres': nuevasPlazasLibres,
+      if (latitud != null && longitud != null) 'ubicacion': GeoPoint(latitud, longitud),
       'fechaInicio': fechaInicio != null
           ? Timestamp.fromDate(fechaInicio)
           : FieldValue.delete(),

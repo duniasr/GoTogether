@@ -40,7 +40,15 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
               Container(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF12467A), // AppColors.primaryDark
+                      AppColors.primary,
+                      Color(0xFF2E85D4), // Slightly lighter blue
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(32),
                     bottomRight: Radius.circular(32),
@@ -239,10 +247,17 @@ class _PlanesTabState extends State<_PlanesTab>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.event_busy_outlined,
-                  size: 52,
-                  color: AppColors.textHint,
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.event_busy_rounded,
+                    size: 48,
+                    color: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(widget.textoVacio, style: AppTextStyles.bodyMedium),
@@ -282,7 +297,7 @@ class _PlanesTabState extends State<_PlanesTab>
                                 : AppColors.error,
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              borderRadius: BorderRadius.circular(AppRadius.md),
                             ),
                             elevation: 0,
                           ),

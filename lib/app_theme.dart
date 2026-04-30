@@ -256,8 +256,15 @@ class AppCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
+  final Color? leftBorderColor;
 
-  const AppCard({super.key, required this.child, this.padding, this.onTap});
+  const AppCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.onTap,
+    this.leftBorderColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -270,8 +277,18 @@ class AppCard extends StatelessWidget {
           boxShadow: AppShadows.card,
           border: Border.all(color: AppColors.surfaceAlt, width: 1.5),
         ),
-        padding: padding ?? const EdgeInsets.all(AppSpacing.md),
-        child: child,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.lg - 1.5),
+          child: Container(
+            decoration: BoxDecoration(
+              border: leftBorderColor != null
+                  ? Border(left: BorderSide(color: leftBorderColor!, width: 4))
+                  : null,
+            ),
+            padding: padding ?? const EdgeInsets.all(AppSpacing.md),
+            child: child,
+          ),
+        ),
       ),
     );
   }
