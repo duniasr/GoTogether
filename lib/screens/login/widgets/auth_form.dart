@@ -169,30 +169,66 @@ class _AuthFormState extends State<AuthForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Form(
-        key: _formKey,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xxl),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: Image.asset(
-                'assets/images/Logo.png',
-                height: 160,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 100, color: Colors.grey),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: Border.all(color: AppColors.primary, width: 1.5),
+                  boxShadow: AppShadows.card,
+                ),
+                child: Image.asset(
+                  'assets/images/Logo.png',
+                  height: 160,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
+                ),
               ),
             ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              widget.isLogin ? 'Welcome Back!' : 'Create Account',
+              style: AppTextStyles.displayMedium.copyWith(color: AppColors.primaryDark),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              widget.isLogin ? 'Sign in to continue to GoTogether' : 'Join GoTogether and find your next plan',
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: AppSpacing.xl),
-
-            if (!widget.isLogin)
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [AppColors.primary, AppColors.primaryDark],
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                boxShadow: AppShadows.card,
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (!widget.isLogin)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: "Your Name",
+                    hintText: "Your Name",
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
@@ -208,7 +244,7 @@ class _AuthFormState extends State<AuthForm> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
-                labelText: "Email",
+                hintText: "Email",
                 prefixIcon: Icon(Icons.email),
               ),
               onChanged: (value) {
@@ -239,7 +275,7 @@ class _AuthFormState extends State<AuthForm> {
               controller: _passwordController,
               obscureText: true,
               decoration: const InputDecoration(
-                labelText: "Password",
+                hintText: "Password",
                 prefixIcon: Icon(Icons.lock),
               ),
               onChanged: (value) {
@@ -270,7 +306,7 @@ class _AuthFormState extends State<AuthForm> {
                   controller: _confirmPasswordController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: "Confirm Password",
+                    hintText: "Confirm Password",
                     prefixIcon: Icon(Icons.lock_outline),
                   ),
                   validator: (value) {
@@ -343,7 +379,7 @@ class _AuthFormState extends State<AuthForm> {
                         TextFormField(
                           controller: _companyNameController,
                           decoration: const InputDecoration(
-                            labelText: "Company Name", 
+                            hintText: "Company Name", 
                             prefixIcon: Icon(Icons.business),
                           ),
                           validator: (value) {
@@ -357,7 +393,7 @@ class _AuthFormState extends State<AuthForm> {
                         TextFormField(
                           controller: _cifController,
                           decoration: const InputDecoration(
-                            labelText: "VAT Number", 
+                            hintText: "VAT Number", 
                             prefixIcon: Icon(Icons.badge),
                           ),
                           validator: (value) {
@@ -377,7 +413,7 @@ class _AuthFormState extends State<AuthForm> {
                           controller: _adminCodeController,
                           obscureText: true,
                           decoration: const InputDecoration(
-                            labelText: "Admin Code",
+                            hintText: "Admin Code",
                             prefixIcon: Icon(Icons.admin_panel_settings),
                           ),
                           onChanged: (_) {
@@ -406,18 +442,53 @@ class _AuthFormState extends State<AuthForm> {
 
             const SizedBox(height: AppSpacing.md),
 
-            AppPrimaryButton(
-              label: widget.isLogin ? "Login" : "Register",
-              isLoading: _isLoading,
-              onPressed: _submit,
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.warning, // El amarillo (0xFFF59E0B)
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                            )
+                          : Text(
+                              widget.isLogin ? "Login" : "Register",
+                              style: AppTextStyles.button.copyWith(color: Colors.white),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-
-            const SizedBox(height: AppSpacing.md),
-
+            const SizedBox(height: AppSpacing.lg),
             TextButton(
               onPressed: widget.onToggleMode,
-              child: Text(
-                widget.isLogin ? "Don't have an account? Register here" : "Already have an account? Login here",
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              ),
+              child: RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: AppTextStyles.bodyMedium,
+                  children: [
+                    TextSpan(
+                      text: widget.isLogin ? "Don't have an account? " : "Already have an account? ",
+                    ),
+                    TextSpan(
+                      text: widget.isLogin ? "Register here" : "Login here",
+                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -4,18 +4,14 @@ import 'utils/translations.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF1A6BFF);
-  static const Color primaryDark = Color(
-    0xFF0D4FCC,
-  );
-  static const Color primaryLight = Color(
-    0xFFE8F0FF,
-  );
+  static const Color primary = Color(0xFF1C63A6);
+  static const Color primaryDark = Color(0xFF12467A);
+  static const Color primaryLight = Color(0xFFE8F0FF);
 
   static const Color accent = Color(0xFFFF7A1A);
   static const Color accentLight = Color(0xFFFFF0E6);
 
-  static const Color background = Color(0xFFE8F0FF); // Azul clarito
+  static const Color background = Color(0xFFFFFFFF); // Blanco
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceAlt = Color(0xFFEEF2F8);
 
@@ -33,7 +29,7 @@ class AppColors {
     'Cultura': Color(0xFF8B5CF6),
     'Gastronomía': Color(0xFFF59E0B),
     'Naturaleza': Color(0xFF84CC16),
-    'Estudio': Color(0xFF3B82F6),
+    'Estudio': Color(0xFF1C63A6),
     'Ocio': Color(0xFFF43F5E),
     'Voluntariado': Color(0xFF14B8A6),
     'Viajes': Color(0xFF0EA5E9),
@@ -137,14 +133,14 @@ class AppShadows {
 
   static List<BoxShadow> get card => [
     BoxShadow(
-      color: AppColors.primary.withOpacity(0.06),
-      blurRadius: 16,
-      offset: const Offset(0, 4),
+      color: Colors.black.withOpacity(0.12),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
     ),
     BoxShadow(
-      color: Colors.black.withOpacity(0.04),
-      blurRadius: 4,
-      offset: const Offset(0, 1),
+      color: Colors.black.withOpacity(0.06),
+      blurRadius: 8,
+      offset: const Offset(0, 3),
     ),
   ];
 
@@ -272,6 +268,7 @@ class AppCard extends StatelessWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           boxShadow: AppShadows.card,
+          border: Border.all(color: AppColors.surfaceAlt, width: 1.5),
         ),
         padding: padding ?? const EdgeInsets.all(AppSpacing.md),
         child: child,
@@ -356,13 +353,13 @@ class CategoryChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         decoration: BoxDecoration(
-          color: selected 
-              ? color 
-              : (isDarkBackground ? Colors.white.withOpacity(0.9) : color.withOpacity(0.15)),
+          color: selected
+              ? color
+              : (isDarkBackground
+                    ? Colors.white.withOpacity(0.9)
+                    : color.withOpacity(0.15)),
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         child: Text(

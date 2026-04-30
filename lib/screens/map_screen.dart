@@ -58,7 +58,7 @@ class _MapScreenState extends State<MapScreen> {
       q.titulo,
       q.esVerificado
           ? const Color(0xFFF59E0B)
-          : const Color(0xFF3B82F6), // Naranja y Azul premium
+          : const Color(0xFF1C63A6), // Naranja y Azul premium
     );
 
     if (mounted) {

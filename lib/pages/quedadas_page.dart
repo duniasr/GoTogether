@@ -403,7 +403,16 @@ class _QuedadasPageState extends State<QuedadasPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Eventos')),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1C63A6), // AppColors.primary
+        foregroundColor: Colors.white,
+        title: const Text('Eventos', style: TextStyle(color: Colors.white)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _mostrarFormularioCrearQuedada,
         icon: const Icon(Icons.add),

@@ -85,7 +85,14 @@ class _AdminVerificationDetailScreenState extends State<AdminVerificationDetailS
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Detalle de solicitud'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Text('Detalle de solicitud', style: TextStyle(color: Colors.white)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),

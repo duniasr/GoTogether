@@ -896,9 +896,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        title: const Text('My Profile', style: AppTextStyles.headlineMedium),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: Text('My Profile', style: AppTextStyles.headlineMedium.copyWith(color: Colors.white)),
         elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
+        ),
       ),
       body: content,
     );

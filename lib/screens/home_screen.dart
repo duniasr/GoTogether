@@ -51,38 +51,38 @@ class _HomeScreenState extends State<HomeScreen> {
               )
             : _currentIndex == 1
                 ? const MapScreen()
-                : _currentIndex == 2
+                : _currentIndex == 3
                     ? const MisPlanesScreen()
                     : _buildPlaceholderTab(_currentIndex),
       ),
-      floatingActionButton: _currentIndex == 0
-          ? Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                boxShadow: AppShadows.button,
-              ),
-              child: FloatingActionButton.extended(
-                onPressed: () => showCreateEventDialog(context, _service),
-                backgroundColor: Color(0xFFF59E0B),
-                foregroundColor: Colors.white,
-                icon: const Icon(Icons.add_rounded, size: 22),
-                label: Text(
-                  'Create Plan',
-                  style: AppTextStyles.button.copyWith(color: Colors.white),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-              ),
-            )
-          : null,
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Container(
+        height: 64,
+        width: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF59E0B).withOpacity(0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => showCreateEventDialog(context, _service),
+          backgroundColor: const Color(0xFFF59E0B),
+          elevation: 0,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 36),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
   Widget _buildPlaceholderTab(int index) {
-    if (index == 3) {
+    if (index == 4) {
       return const ProfileScreen();
     }
 
@@ -106,7 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) {
+          if (index == 2) {
+            showCreateEventDialog(context, _service);
+            return;
+          }
+          setState(() => _currentIndex = index);
+        },
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -127,6 +133,10 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.map_outlined),
             activeIcon: Icon(Icons.map_rounded),
             label: 'Map',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.add, color: Colors.transparent),
+            label: 'Create',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.event_note_outlined),

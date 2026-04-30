@@ -18,7 +18,14 @@ class AdminVerificationScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Solicitudes de verificación'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Text('Solicitudes de verificación', style: TextStyle(color: Colors.white)),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(32),
+          ),
+        ),
         actions: [
           IconButton(
             onPressed: () async {

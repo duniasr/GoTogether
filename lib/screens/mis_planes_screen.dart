@@ -33,50 +33,46 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
       length: 2, // Dos pestañas: "Creados" y "Unidos"
       child: Scaffold(
         backgroundColor: AppColors.background,
-        floatingActionButton: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            boxShadow: AppShadows.button,
-          ),
-          child: FloatingActionButton.extended(
-            onPressed: () => showCreateEventDialog(context, _service),
-            backgroundColor: AppColors.warning,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add_rounded, size: 22),
-            label: Text(
-              'Create Plan',
-              style: AppTextStyles.button.copyWith(color: Colors.white),
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  0,
+              Container(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
                 ),
-                child: Text(
-                  'My Plans',
-                  style: AppTextStyles.displayMedium.copyWith(color: const Color(0xFFF59E0B)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.lg,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        'My Plans',
+                        style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
+                      ),
+                    ),
+                    const TabBar(
+                      indicatorColor: Colors.white,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        Tab(text: 'Created'),
+                        Tab(text: 'Joined'),
+                      ],
+                    ),
+                  ],
                 ),
-              ),
-              const TabBar(
-                indicatorColor: AppColors.primary,
-                labelColor: AppColors.primary,
-                unselectedLabelColor: AppColors.textSecondary,
-                tabs: [
-                  Tab(text: 'Created'),
-                  Tab(text: 'Joined'),
-                ],
               ),
               Expanded(
                 child: TabBarView(

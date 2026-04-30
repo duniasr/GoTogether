@@ -102,7 +102,7 @@ class _ExploreTabState extends State<ExploreTab> {
                         widget.selectedCategory.toLowerCase(),
                   )
                   .toList();
-                  
+
         final filtered = filteredByCategory.where((q) {
           if (_searchQuery.isEmpty) return true;
           return q.titulo.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -164,10 +164,14 @@ class _ExploreTabState extends State<ExploreTab> {
                   children: [
                     Text(
                       widget.selectedCategory == 'Todos'
-                          ? 'Nearby Plans'
+                          ? 'Upcoming Plans Near You'
                           : translateCategory(widget.selectedCategory),
                       style: AppTextStyles.headlineMedium.copyWith(
-                        color: const Color(0xFFF59E0B), // Amarillo
+                        color: widget.selectedCategory == 'Todos'
+                            ? const Color(0xFFF59E0B)
+                            : (AppColors.categoryColors[widget
+                                      .selectedCategory] ??
+                                  const Color(0xFFF59E0B)),
                       ),
                     ),
                     if (!isLoading)
@@ -201,8 +205,10 @@ class _ExploreTabState extends State<ExploreTab> {
                     final q = filtered[index];
                     final uid = FirebaseAuth.instance.currentUser?.uid;
                     final email = FirebaseAuth.instance.currentUser?.email;
-                    final isOrganizer = (uid != null && uid == q.organizadorId) || 
-                        uid == q.organizador || email == q.organizador;
+                    final isOrganizer =
+                        (uid != null && uid == q.organizadorId) ||
+                        uid == q.organizador ||
+                        email == q.organizador;
                     final isJoined =
                         (uid != null && q.asistentesID.contains(uid)) ||
                         isOrganizer;
@@ -261,12 +267,74 @@ class _ExploreTabState extends State<ExploreTab> {
                               }
                             : null,
                         actionButton: isJoined
-                            ? null
+                            ? (isOrganizer
+                                ? null
+                                : ElevatedButton(
+                                    onPressed: () async {
+                                      final confirmar =
+                                          await showDialog<bool>(
+                                            context: context,
+                                            builder: (ctx) => AlertDialog(
+                                              title: const Text('Leave event'),
+                                              content: Text(
+                                                'Are you sure you want to leave "${q.titulo}"?',
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx).pop(false),
+                                                  child: const Text('Cancel'),
+                                                ),
+                                                FilledButton(
+                                                  style: FilledButton.styleFrom(
+                                                    backgroundColor: AppColors.error,
+                                                  ),
+                                                  onPressed: () =>
+                                                      Navigator.of(ctx).pop(true),
+                                                  child: const Text('Leave'),
+                                                ),
+                                              ],
+                                            ),
+                                          ) ??
+                                          false;
+
+                                      if (!confirmar) return;
+
+                                      try {
+                                        await widget.service.abandonarQuedada(q.id);
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('You have left the plan.')),
+                                        );
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Error leaving: $e')),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.error.withOpacity(0.1),
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Leave',
+                                      style: AppTextStyles.button.copyWith(color: AppColors.error),
+                                    ),
+                                  ))
                             : ElevatedButton(
-                                onPressed: (q.plazasLibres > 0 && q.estado == 'abierta')
+                                onPressed:
+                                    (q.plazasLibres > 0 &&
+                                        q.estado == 'abierta')
                                     ? () async {
                                         try {
-                                          await widget.service.unirseAQuedada(q.id);
+                                          await widget.service.unirseAQuedada(
+                                            q.id,
+                                          );
                                           if (!context.mounted) return;
                                           ScaffoldMessenger.of(
                                             context,
@@ -306,9 +374,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                   elevation: 0,
                                 ),
                                 child: Text(
-                                  (q.plazasLibres > 0 && q.estado == 'abierta') 
-                                      ? 'Join' 
-                                      : (q.estado == 'cerrada' ? 'Closed' : 'Full'),
+                                  (q.plazasLibres > 0 && q.estado == 'abierta')
+                                      ? 'Join'
+                                      : (q.estado == 'cerrada'
+                                            ? 'Closed'
+                                            : 'Full'),
                                   style: AppTextStyles.button.copyWith(
                                     color: Colors.white,
                                   ),
@@ -333,9 +403,26 @@ class _ExploreTabState extends State<ExploreTab> {
         AppSpacing.md,
         AppSpacing.md,
       ),
-      child: Text(
-        'GoTogether',
-        style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+            child: Image.asset(
+              'assets/images/Logo.png',
+              height: 32,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'GoTogether',
+            style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
+          ),
+        ],
       ),
     );
   }
@@ -357,7 +444,9 @@ class _ExploreTabState extends State<ExploreTab> {
         },
         decoration: InputDecoration(
           hintText: 'Search plan by name...',
-          hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+          hintStyle: AppTextStyles.bodyMedium.copyWith(
+            color: AppColors.textHint,
+          ),
           prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
