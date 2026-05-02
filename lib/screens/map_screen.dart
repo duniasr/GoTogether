@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:ui' as ui;
@@ -285,6 +286,16 @@ class _MapScreenState extends State<MapScreen> {
                 icon: markerIcon,
                 anchor: markerAnchor,
                 onTap: () {
+                  final uid = FirebaseAuth.instance.currentUser?.uid;
+                  final email = FirebaseAuth.instance.currentUser?.email;
+                  final isOrganizer =
+                      (uid != null && uid == q.organizadorId) ||
+                      uid == q.organizador ||
+                      email == q.organizador;
+                  final isJoined =
+                      (uid != null && q.asistentesID.contains(uid)) ||
+                      isOrganizer;
+
                   showModalBottomSheet(
                     context: context,
                     backgroundColor: Colors.transparent,
@@ -300,7 +311,95 @@ class _MapScreenState extends State<MapScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            EventCard(quedada: q),
+                            EventCard(
+                              quedada: q,
+                              isJoined: isJoined,
+                              actionButton: isJoined
+                                  ? (isOrganizer
+                                      ? null
+                                      : ElevatedButton(
+                                          onPressed: () async {
+                                            final confirmar = await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: const Text('Leave event'),
+                                                content: Text('Are you sure you want to leave "${q.titulo}"?'),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () => Navigator.of(ctx).pop(false),
+                                                    child: const Text('Cancel'),
+                                                  ),
+                                                  FilledButton(
+                                                    style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                                    onPressed: () => Navigator.of(ctx).pop(true),
+                                                    child: const Text('Leave'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ?? false;
+
+                                            if (!confirmar) return;
+
+                                            try {
+                                              await _quedadasService.abandonarQuedada(q.id);
+                                              if (!context.mounted) return;
+                                              Navigator.pop(context);
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('You have left the plan.')),
+                                              );
+                                            } catch (e) {
+                                              if (!context.mounted) return;
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Error leaving: $e')),
+                                              );
+                                            }
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                              backgroundColor: AppColors.error.withOpacity(0.1),
+                                              elevation: 0,
+                                              padding: const EdgeInsets.symmetric(vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                              ),
+                                          ),
+                                          child: Text('Leave', style: AppTextStyles.button.copyWith(color: AppColors.error)),
+                                        ))
+                                  : ElevatedButton(
+                                      onPressed: (q.plazasLibres > 0 && q.estado == 'abierta')
+                                          ? () async {
+                                              try {
+                                                await _quedadasService.unirseAQuedada(q.id);
+                                                if (!context.mounted) return;
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(content: Text('You have joined the plan!')),
+                                                );
+                                              } catch (e) {
+                                                if (!context.mounted) return;
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(content: Text('Error joining: $e')),
+                                                );
+                                              }
+                                            }
+                                          : null,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        disabledBackgroundColor: AppColors.error,
+                                        disabledForegroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(AppRadius.md),
+                                        ),
+                                        elevation: 0,
+                                      ),
+                                      child: Text(
+                                        (q.plazasLibres > 0 && q.estado == 'abierta')
+                                            ? 'Join'
+                                            : (q.estado == 'cerrada' ? 'Closed' : 'Full'),
+                                        style: AppTextStyles.button.copyWith(color: Colors.white),
+                                      ),
+                                    ),
+                            ),
                             const SizedBox(height: AppSpacing.md),
                           ],
                         ),
