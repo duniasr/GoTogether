@@ -189,59 +189,59 @@ class _AuthFormState extends State<AuthForm> {
           vertical: AppSpacing.xxl,
         ),
         child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: Image.asset(
-                    'assets/images/Logo.png',
-                    height: 100,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => const Icon(
-                      Icons.image_not_supported,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                widget.isLogin ? 'Welcome Back!' : 'Create Account',
-                style: AppTextStyles.displayMedium.copyWith(
-                  color: AppColors.primaryDark,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                widget.isLogin
-                    ? 'Sign in to continue to GoTogether'
-                    : 'Join GoTogether and find your next plan',
-                style: AppTextStyles.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xl),
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 decoration: BoxDecoration(
+                  shape: BoxShape.circle,
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
                   boxShadow: AppShadows.card,
-                  border: Border.all(color: AppColors.surfaceAlt, width: 1.5),
                 ),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                child: Image.asset(
+                  'assets/images/Logo.png',
+                  height: 100,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => const Icon(
+                    Icons.image_not_supported,
+                    size: 60,
+                    color: Colors.grey,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              widget.isLogin ? 'Welcome Back!' : 'Create Account',
+              style: AppTextStyles.displayMedium.copyWith(
+                color: AppColors.primaryDark,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              widget.isLogin
+                  ? 'Sign in to continue to GoTogether'
+                  : 'Join GoTogether and find your next plan',
+              style: AppTextStyles.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                boxShadow: AppShadows.card,
+                border: Border.all(color: AppColors.surfaceAlt, width: 1.5),
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     if (!widget.isLogin)
                       Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -549,7 +549,9 @@ class _AuthFormState extends State<AuthForm> {
                       onPressed: widget.onToggleMode,
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.md,
+                        ),
                       ),
                       child: RichText(
                         textAlign: TextAlign.center,
@@ -562,7 +564,9 @@ class _AuthFormState extends State<AuthForm> {
                                   : "Already have an account? ",
                             ),
                             TextSpan(
-                              text: widget.isLogin ? "Register here" : "Login here",
+                              text: widget.isLogin
+                                  ? "Register here"
+                                  : "Login here",
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,

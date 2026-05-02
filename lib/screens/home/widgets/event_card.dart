@@ -424,42 +424,51 @@ class EventCard extends StatelessWidget {
 
   Future<String> _obtenerDireccion(double lat, double lon) async {
     if (kIsWeb) {
-      try {
-        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
-        final response = await http.get(url, headers: {
-          'User-Agent': 'GoTogetherApp/1.0'
-        }).timeout(const Duration(seconds: 3));
-        if (response.statusCode == 200) {
-          final data = json.decode(response.body);
-          final displayName = data['display_name'] as String?;
-          if (displayName != null && displayName.isNotEmpty) {
-            final parts = displayName.split(',');
-            if (parts.length > 2) {
-              return '${parts[0].trim()}, ${parts[1].trim()}';
-            }
-            return displayName;
-          }
-        }
-      } catch (_) {}
-      return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+      return _getNominatimAddress(lat, lon);
     } else {
       try {
         final placemarks = await placemarkFromCoordinates(lat, lon);
         if (placemarks.isNotEmpty) {
           final p = placemarks.first;
-          final street = p.street ?? "";
-          final locality = p.locality ?? "";
+          final street = p.street?.isNotEmpty == true ? p.street! : (p.thoroughfare ?? "");
+          final locality = p.locality?.isNotEmpty == true ? p.locality! : (p.subLocality ?? "");
+          
           if (street.isNotEmpty && locality.isNotEmpty) {
             return '$street, $locality';
           } else if (street.isNotEmpty) {
             return street;
           } else if (locality.isNotEmpty) {
             return locality;
+          } else if (p.name?.isNotEmpty == true) {
+            return p.name!;
           }
         }
       } catch (_) {}
-      return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+      
+      // Fallback a Nominatim si geocoding nativo falla (muy común en emuladores)
+      return _getNominatimAddress(lat, lon);
     }
+  }
+
+  Future<String> _getNominatimAddress(double lat, double lon) async {
+    try {
+      final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'GoTogetherApp/1.0'
+      }).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final displayName = data['display_name'] as String?;
+        if (displayName != null && displayName.isNotEmpty) {
+          final parts = displayName.split(',');
+          if (parts.length > 2) {
+            return '${parts[0].trim()}, ${parts[1].trim()}';
+          }
+          return displayName;
+        }
+      }
+    } catch (_) {}
+    return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
   }
 
   Future<void> _mostrarDialogoReporte(BuildContext context) async {
