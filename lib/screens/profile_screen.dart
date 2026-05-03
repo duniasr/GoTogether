@@ -46,12 +46,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _estadoVerificacion;
   
   final List<String> _avataresDisponibles = [
-    'assets/images/avatars/avatar1.png',
-    'assets/images/avatars/avatar2.png',
-    'assets/images/avatars/avatar3.png',
-    'assets/images/avatars/avatar4.png',
-    'assets/images/avatars/avatar5.png',
-    'assets/images/avatars/avatar6.png',
+    'assets/images/avatars/avatar1.jpeg',
+    'assets/images/avatars/avatar2.jpeg',
+    'assets/images/avatars/avatar3.jpeg',
+    'assets/images/avatars/avatar4.jpeg',
+    'assets/images/avatars/avatar5.jpeg',
+    'assets/images/avatars/avatar6.jpeg',
+    'assets/images/avatars/avatar7.jpeg',
   ];
 
   @override
@@ -100,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _bioController.text = data['bio'] ?? "";
           _companyNameController.text = data['nombreEmpresa'] ?? '';
           _cifController.text = data['cif'] ?? '';
-          _rol = data['rol'] ?? 'usuario';
+          _rol = data['rol'] ?? 'user';
           _estadoVerificacion = data['estadoVerificacion'];
         });
         _validateForm(); 
@@ -361,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_companyNameController.text.trim().isEmpty || _cifController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Debes completar el nombre de empresa y el CIF/NIF.'),
+          content: Text('You must complete the company name and CIF/NIF.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -374,8 +375,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
         'nombreEmpresa': _companyNameController.text.trim(),
         'cif': _cifController.text.trim(),
-        'rol': 'usuario',
-        'estadoVerificacion': 'pendiente',
+        'rol': 'user',
+        'estadoVerificacion': 'pending',
         'fechaSolicitudVerificacion': FieldValue.serverTimestamp(),
         'revisadoPor': FieldValue.delete(),
         'fechaRevision': FieldValue.delete(),
@@ -383,12 +384,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         setState(() {
-          _rol = 'usuario';
-          _estadoVerificacion = 'pendiente';
+          _rol = 'user';
+          _estadoVerificacion = 'pending';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Solicitud enviada correctamente.'),
+            content: Text('Request sent successfully.'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -397,7 +398,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error enviando la solicitud: $e'),
+            content: Text('Error sending request: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -518,9 +519,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildVerificationSection() {
-    final isVerified = _rol == 'verificado' || _estadoVerificacion == 'aprobado';
-    final isPending = _estadoVerificacion == 'pendiente';
-    final isRejected = _estadoVerificacion == 'rechazado';
+    final isVerified = _rol == 'verified' || _estadoVerificacion == 'approved';
+    final isPending = _estadoVerificacion == 'pending';
+    final isRejected = _estadoVerificacion == 'rejected';
 
     return AppCard(
       child: Column(
@@ -531,7 +532,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(Icons.verified_user_outlined, color: AppColors.primary),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Solicitud de verificación',
+                'Verification request',
                 style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal),
               ),
             ],
@@ -551,7 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Tu cuenta ya está verificada.',
+                      'Your account is already verified.',
                       style: AppTextStyles.bodyLarge,
                     ),
                   ),
@@ -573,7 +574,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Tu solicitud está pendiente de revisión por un administrador.',
+                        'Your request is pending review by an administrator.',
                         style: AppTextStyles.bodyLarge,
                       ),
                     ),
@@ -596,7 +597,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          'Tu solicitud fue rechazada. Puedes corregir los datos y volver a enviarla.',
+                          'Your request was rejected. You can correct the data and resend it.',
                           style: AppTextStyles.bodyLarge,
                         ),
                       ),
@@ -605,7 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             const Text(
-              'Completa estos datos para solicitar la verificación como organizador.',
+              'Complete these details to request verification as an organizer.',
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -613,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: _companyNameController,
               enabled: !isPending && !_isVerificationLoading,
               decoration: const InputDecoration(
-                labelText: 'Nombre de la Empresa',
+                labelText: 'Company Name',
                 prefixIcon: Icon(Icons.business),
               ),
             ),
@@ -628,7 +629,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppPrimaryButton(
-              label: isRejected ? 'Reenviar solicitud' : 'Enviar solicitud',
+              label: isRejected ? 'Resend request' : 'Send request',
               isLoading: _isVerificationLoading,
               onPressed: isPending || _isVerificationLoading ? null : _submitVerificationRequest,
             ),

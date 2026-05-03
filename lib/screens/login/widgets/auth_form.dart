@@ -123,7 +123,7 @@ class _AuthFormState extends State<AuthForm> {
         if (_isAdmin && _adminCodeController.text.trim() != _adminSecretCode) {
           await user.user?.delete();
           setState(() {
-            _backendAdminCodeError = 'Código de administrador incorrecto';
+            _backendAdminCodeError = 'Incorrect admin code';
           });
           _formKey.currentState!.validate();
           return;
@@ -136,7 +136,7 @@ class _AuthFormState extends State<AuthForm> {
           'email': email,
           'puntos': 0,
           'fechaRegistro': DateTime.now(),
-          'rol': _isAdmin ? 'admin' : 'usuario',
+          'rol': _isAdmin ? 'admin' : 'user',
         };
 
         if (_isAdmin) {

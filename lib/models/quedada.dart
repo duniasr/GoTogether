@@ -55,7 +55,7 @@ class Quedada {
       descripcion: data['descripcion'] as String? ?? '',
       esVerificado: data['esVerificado'] as bool? ?? false,
       estado: data['estado'] as String? ?? 'abierta',
-      organizador: data['organizador'] as String? ?? 'anonimo',
+      organizador: data['organizador'] as String? ?? 'anonymous',
       organizadorId: data['organizadorId'] as String? ?? '',
       plazasLibres: (data['plazasLibres'] as num?)?.toInt() ?? 0,
       tematica: data['tematica'] as String? ?? 'Otros',

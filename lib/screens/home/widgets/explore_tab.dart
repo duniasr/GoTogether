@@ -93,12 +93,14 @@ class _ExploreTabState extends State<ExploreTab> {
             snapshot.connectionState == ConnectionState.waiting &&
             allQuedadas.isEmpty;
 
-        final filteredByCategory = widget.selectedCategory == 'Todos'
+        final filteredByCategory = widget.selectedCategory == 'All'
             ? allQuedadas
             : allQuedadas
                   .where(
                     (q) =>
                         q.tematica.toLowerCase() ==
+                        widget.selectedCategory.toLowerCase() ||
+                        translateCategory(q.tematica).toLowerCase() == 
                         widget.selectedCategory.toLowerCase(),
                   )
                   .toList();
@@ -171,11 +173,11 @@ class _ExploreTabState extends State<ExploreTab> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      widget.selectedCategory == 'Todos'
+                      widget.selectedCategory == 'All'
                           ? 'Upcoming Plans Near You'
                           : translateCategory(widget.selectedCategory),
                       style: AppTextStyles.headlineMedium.copyWith(
-                        color: widget.selectedCategory == 'Todos'
+                        color: widget.selectedCategory == 'All'
                             ? const Color(0xFFF59E0B)
                             : (AppColors.categoryColors[widget
                                       .selectedCategory] ??

@@ -15,13 +15,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCategory = 'Todos';
+  String _selectedCategory = 'All';
   int _currentIndex = 0;
 
   final QuedadasService _service = QuedadasService();
 
   final List<String> _categories = [
-    'Todos',
+    'All',
     'Deporte',
     'Naturaleza',
     'Estudio',

@@ -1,5 +1,6 @@
 const Map<String, String> categoryTranslations = {
   'Todos': 'All',
+  'All': 'All',
   'Deporte': 'Sports',
   'Naturaleza': 'Nature',
   'Estudio': 'Study',
@@ -13,6 +14,7 @@ const Map<String, String> categoryTranslations = {
   'Música': 'Music',
   'Networking': 'Networking',
   'Otros': 'Other',
+  'Other': 'Other',
 };
 
 const Map<String, String> statusTranslations = {

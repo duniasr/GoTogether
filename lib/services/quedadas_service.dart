@@ -70,7 +70,7 @@ class QuedadasService {
 
         if (userDoc.exists) {
           // Si el usuario es verificado, sus eventos se crean como verificados automáticamente
-          if (userDoc.data()?['rol'] == 'verificado') {
+          if (userDoc.data()?['rol'] == 'verified') {
             esVerificadoFinal = true;
           }
 
@@ -82,16 +82,16 @@ class QuedadasService {
         }
 
         if (organizadorFinal.isEmpty) {
-          organizadorFinal = usuario.displayName ?? 'Anónimo';
+          organizadorFinal = usuario.displayName ?? 'Anonymous';
         }
       } catch (e) {
         if (organizadorFinal.isEmpty) {
-          organizadorFinal = 'Anónimo';
+          organizadorFinal = 'Anonymous';
         }
       }
     } else {
       if (organizadorFinal.isEmpty) {
-        organizadorFinal = 'Anónimo';
+        organizadorFinal = 'Anonymous';
       }
     }
 
@@ -152,33 +152,18 @@ class QuedadasService {
     final usuario = _auth.currentUser;
     if (usuario == null) return Stream.value([]);
 
-    return Stream.fromFuture(
-      _firestore
-          .collection('users')
-          .doc(usuario.uid)
-          .get()
-          .then<String>(
-            (doc) =>
-                doc.data()?['nombre'] as String? ??
-                usuario.displayName ??
-                'Anónimo',
-          )
-          .catchError((_) => usuario.displayName ?? 'Anónimo'),
-    ).asyncExpand(
-      (nombre) => _eventsRef
-          .where('organizador', isEqualTo: nombre)
-          .snapshots()
-          .map((snapshot) {
-            final eventos = snapshot.docs
-                .map(Quedada.fromFirestore)
-                .toList(growable: false);
-            eventos.sort(
-              (a, b) =>
-                  a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
-            );
-            return eventos;
-          }),
-    );
+    return _eventsRef
+        .where('organizadorId', isEqualTo: usuario.uid)
+        .snapshots()
+        .map((snapshot) {
+          final eventos = snapshot.docs
+              .map(Quedada.fromFirestore)
+              .toList(growable: false);
+          eventos.sort(
+            (a, b) => a.titulo.toLowerCase().compareTo(b.titulo.toLowerCase()),
+          );
+          return eventos;
+        });
   }
 
   Future<void> actualizarQuedada({
@@ -201,7 +186,9 @@ class QuedadasService {
       
       // Calculate new available spots
       nuevasPlazasLibres = cupoMax - currentQuedada.asistentesID.length;
-      if (nuevasPlazasLibres < 0) nuevasPlazasLibres = 0;
+      if (nuevasPlazasLibres < 0) {
+        throw Exception('Capacity cannot be less than the current number of participants (${currentQuedada.asistentesID.length})');
+      }
 
       // Check if we need to notify about cancellation
       if (estado == 'cancelada' && currentQuedada.estado != 'cancelada' && currentQuedada.asistentesID.isNotEmpty) {

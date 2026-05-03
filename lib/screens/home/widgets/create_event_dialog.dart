@@ -204,7 +204,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      final organizadorNombre = user?.displayName?.isNotEmpty == true ? user!.displayName! : (user?.email ?? 'Desconocido');
+      final organizadorNombre = user?.displayName?.isNotEmpty == true ? user!.displayName! : (user?.email ?? 'Unknown');
 
       await widget.service.crearQuedada(
         titulo: _tituloCtrl.text.trim(),

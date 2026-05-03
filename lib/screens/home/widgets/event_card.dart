@@ -167,7 +167,7 @@ class EventCard extends StatelessWidget {
                   child: FutureBuilder<String>(
                     future: _obtenerDireccion(quedada.ubicacion.latitude, quedada.ubicacion.longitude),
                     builder: (context, snapshot) {
-                      final locationText = snapshot.data ?? 'Ver ubicación';
+                      final locationText = snapshot.data ?? 'View location';
                       return Text(
                         locationText,
                         style: AppTextStyles.labelSmall.copyWith(
@@ -390,7 +390,7 @@ class EventCard extends StatelessWidget {
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     final user = users[index].data() as Map<String, dynamic>?;
-                    final nombre = user?['nombre'] ?? 'Anónimo';
+                    final nombre = user?['nombre'] ?? 'Anonymous';
                     final email = user?['email'] ?? 'No email';
                     final fotoUrl = user?['fotoUrl'];
 

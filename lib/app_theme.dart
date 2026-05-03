@@ -37,6 +37,8 @@ class AppColors {
     'Música': Color(0xFFD946EF),
     'Networking': Color(0xFFEAB308),
     'Otros': Color(0xFF64748B),
+    'All': Color(0xFFF59E0B),
+    'Other': Color(0xFF64748B),
   };
 }
 
