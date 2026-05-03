@@ -57,7 +57,6 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   ];
 
   String _tematica = 'Deporte';
-  bool _esVerificado = false;
   bool _guardando = false;
   String? _errorMessage; 
   String? _successMessage;
@@ -215,7 +214,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         latitud: lat,
         longitud: lon,
         estado: 'abierta',
-        esVerificado: _esVerificado,
+        esVerificado: false,
         fechaInicio: _fechaInicio!,
         fechaFin: _fechaFin!,
       );
@@ -287,14 +286,6 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                       },
               ),
               const SizedBox(height: 12),
-              CheckboxListTile(
-                value: _esVerificado,
-                onChanged: _guardando ? null : (v) => setState(() => _esVerificado = v ?? false),
-                title: const Text('Verified Event'),
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                activeColor: const Color(0xFFF59E0B),
-              ),
               const SizedBox(height: 12),
               
               Text('Event Schedule *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
