@@ -543,12 +543,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.10),
+                color: const Color(0xFFFFAA00).withOpacity(0.10),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.verified, color: AppColors.success),
+                  Icon(Icons.verified, color: Color(0xFFFFAA00)),
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
@@ -648,6 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           GestureDetector(
             onTap: _mostrarSelectorAvatar, 
             child: Stack(
+              clipBehavior: Clip.none,
               alignment: Alignment.bottomRight, 
               children: [
                 CircleAvatar(
@@ -664,6 +665,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
                   child: const Icon(Icons.edit, color: Colors.white, size: 20),
                 ),
+                if (_rol == 'verificado' || _estadoVerificacion == 'aprobado')
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.verified_rounded,
+                        color: Color(0xFFFFAA00),
+                        size: 34,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

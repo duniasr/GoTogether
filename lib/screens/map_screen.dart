@@ -48,10 +48,10 @@ class _MapScreenState extends State<MapScreen> {
     _quedadasStream = _quedadasService.escucharQuedadasFuturas();
   }
 
-  Future<void> _generateIconForEvent(Quedada q, double zoom) async {
-    // Usamos una clave que dependa del zoom (redondeado para no regenerar en exceso)
-    final String cacheKey = "${q.id}_${zoom.round()}";
-    
+  Future<void> _generateIconForEvent(Quedada q, double zoom, double deviceScale) async {
+    // Usamos una clave que dependa del zoom y el deviceScale
+    final String cacheKey = "${q.id}_${zoom.round()}_$deviceScale";
+
     if (_markersIcons.containsKey(cacheKey)) return;
 
     // Marcador vacío temporal para evitar llamadas múltiples
@@ -66,6 +66,7 @@ class _MapScreenState extends State<MapScreen> {
           ? const Color(0xFFF59E0B)
           : const Color(0xFF1C63A6), // Naranja y Azul premium
       zoom,
+      deviceScale,
     );
 
     if (mounted) {
@@ -79,18 +80,16 @@ class _MapScreenState extends State<MapScreen> {
     String text,
     Color color,
     double zoom,
+    double deviceScale,
   ) async {
-    // Escala mucho más agresiva porque el usuario los sigue viendo pequeños
-    // Base 2.8 en zoom 14.
-    double scale = 2.8; 
+    // Usamos un tamaño base de 1.0 multiplicado por la escala del dispositivo.
+    double scale = 1.0 * deviceScale; 
     if (zoom > 14) {
-      // Al acercarnos, reducimos pero mantenemos un tamaño mínimo generoso
-      scale = 2.8 - (zoom - 14) * 0.25;
+      scale = (1.0 - (zoom - 14) * 0.1) * deviceScale;
     } else if (zoom < 14) {
-      // Al alejarnos, los hacemos gigantes para que se vean bien
-      scale = 2.8 + (14 - zoom) * 0.4;
+      scale = (1.0 + (14 - zoom) * 0.15) * deviceScale;
     }
-    scale = scale.clamp(1.0, 6.0); // Tamaño mínimo 1.0, máximo 6.0
+    scale = scale.clamp(0.6 * deviceScale, 2.0 * deviceScale); // Tamaño mínimo 1.0, máximo 6.0
 
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
@@ -138,7 +137,12 @@ class _MapScreenState extends State<MapScreen> {
       radius: Radius.circular(15 * scale),
       clockwise: true,
     );
-    path.quadraticBezierTo(pinBaseX + (12 * scale), pinBaseY - (22 * scale), pinBaseX, pinBaseY);
+    path.quadraticBezierTo(
+      pinBaseX + (12 * scale),
+      pinBaseY - (22 * scale),
+      pinBaseX,
+      pinBaseY,
+    );
 
     canvas.drawShadow(
       path.shift(Offset(0, -1 * scale)),
@@ -252,13 +256,20 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    // Escala responsiva: un 30% más grande en móviles para que no se vea pequeño
+    final double deviceScale = screenWidth < 600 ? 1.3 : 1.0;
+
     return Scaffold(
       appBar: widget.initialCenter != null
           ? AppBar(
               backgroundColor: AppColors.surface,
               foregroundColor: AppColors.textPrimary,
               elevation: 0,
-              title: const Text('Location on Map', style: AppTextStyles.headlineSmall),
+              title: const Text(
+                'Location on Map',
+                style: AppTextStyles.headlineSmall,
+              ),
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () => Navigator.pop(context),
@@ -277,10 +288,10 @@ class _MapScreenState extends State<MapScreen> {
           if (snapshot.hasData) {
             markers = snapshot.data!.map((q) {
               // Pedimos que se genere el icono con texto (es asíncrono)
-              _generateIconForEvent(q, _currentZoom);
+              _generateIconForEvent(q, _currentZoom, deviceScale);
 
               // Usamos el icono guardado y su ancla, o valores por defecto
-              final String cacheKey = "${q.id}_${_currentZoom.round()}";
+              final String cacheKey = "${q.id}_${_currentZoom.round()}_$deviceScale";
               final markerData = _markersIcons[cacheKey];
               final BitmapDescriptor markerIcon =
                   markerData?.$1 ??
@@ -338,24 +349,37 @@ class _MapScreenState extends State<MapScreen> {
       isScrollControlled: true,
       builder: (context) {
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('events').doc(eventId).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('events')
+              .doc(eventId)
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.hasError) return const SizedBox.shrink();
-            if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox.shrink();
+            if (!snapshot.hasData || !snapshot.data!.exists)
+              return const SizedBox.shrink();
 
             final q = Quedada.fromFirestore(snapshot.data!);
             final uid = FirebaseAuth.instance.currentUser?.uid;
             final email = FirebaseAuth.instance.currentUser?.email;
-            final isOrganizer = (uid != null && uid == q.organizadorId) ||
-                                uid == q.organizador ||
-                                email == q.organizador;
-            final isJoined = (uid != null && q.asistentesID.contains(uid)) || isOrganizer;
+            final isOrganizer =
+                (uid != null && uid == q.organizadorId) ||
+                uid == q.organizador ||
+                email == q.organizador;
+            final isJoined =
+                (uid != null && q.asistentesID.contains(uid)) || isOrganizer;
 
             return Container(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xl),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xl,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.xl),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -375,77 +399,126 @@ class _MapScreenState extends State<MapScreen> {
                     isJoined: isJoined,
                     actionButton: isJoined
                         ? (isOrganizer
-                            ? null
-                            : ElevatedButton(
-                                onPressed: () async {
-                                  final confirmar = await showDialog<bool>(
-                                    context: context,
-                                    builder: (ctx) => AlertDialog(
-                                      title: const Text('Leave event'),
-                                      content: Text('Are you sure you want to leave "${q.titulo}"?'),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(ctx).pop(false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        FilledButton(
-                                          style: FilledButton.styleFrom(backgroundColor: AppColors.error),
-                                          onPressed: () => Navigator.of(ctx).pop(true),
-                                          child: const Text('Leave'),
-                                        ),
-                                      ],
-                                    ),
-                                  ) ?? false;
+                              ? null
+                              : ElevatedButton(
+                                  onPressed: () async {
+                                    final confirmar =
+                                        await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: const Text('Leave event'),
+                                            content: Text(
+                                              'Are you sure you want to leave "${q.titulo}"?',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.of(
+                                                  ctx,
+                                                ).pop(false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              FilledButton(
+                                                style: FilledButton.styleFrom(
+                                                  backgroundColor:
+                                                      AppColors.error,
+                                                ),
+                                                onPressed: () =>
+                                                    Navigator.of(ctx).pop(true),
+                                                child: const Text('Leave'),
+                                              ),
+                                            ],
+                                          ),
+                                        ) ??
+                                        false;
 
-                                  if (!confirmar) return;
+                                    if (!confirmar) return;
 
-                                  try {
-                                    await _quedadasService.abandonarQuedada(q.id);
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('You have left the plan.')),
-                                    );
-                                  } catch (e) {
-                                    if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Error leaving: $e')),
-                                    );
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.error.withOpacity(0.1),
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(AppRadius.md),
-                                  ),
-                                ),
-                                child: Text('Leave', style: AppTextStyles.button.copyWith(color: AppColors.error)),
-                              ))
-                        : ElevatedButton(
-                            onPressed: (q.plazasLibres > 0 && q.estado == 'abierta')
-                                ? () async {
                                     try {
-                                      await _quedadasService.unirseAQuedada(q.id);
+                                      await _quedadasService.abandonarQuedada(
+                                        q.id,
+                                      );
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('You have joined the plan!'), backgroundColor: Colors.green),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'You have left the plan.',
+                                          ),
+                                        ),
                                       );
                                     } catch (e) {
                                       if (!context.mounted) return;
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error joining: $e')),
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error leaving: $e'),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.error
+                                        .withOpacity(0.1),
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadius.md,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Leave',
+                                    style: AppTextStyles.button.copyWith(
+                                      color: AppColors.error,
+                                    ),
+                                  ),
+                                ))
+                        : ElevatedButton(
+                            onPressed:
+                                (q.plazasLibres > 0 && q.estado == 'abierta')
+                                ? () async {
+                                    try {
+                                      await _quedadasService.unirseAQuedada(
+                                        q.id,
+                                      );
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'You have joined the plan!',
+                                          ),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error joining: $e'),
+                                        ),
                                       );
                                     }
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              disabledBackgroundColor: AppColors.error.withOpacity(0.1),
+                              disabledBackgroundColor: AppColors.error
+                                  .withOpacity(0.1),
                               disabledForegroundColor: AppColors.error,
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
                               ),
                               elevation: 0,
                             ),
@@ -453,7 +526,13 @@ class _MapScreenState extends State<MapScreen> {
                               (q.plazasLibres > 0 && q.estado == 'abierta')
                                   ? 'Join'
                                   : (q.estado == 'cerrada' ? 'Closed' : 'Full'),
-                              style: AppTextStyles.button.copyWith(color: (q.plazasLibres > 0 && q.estado == 'abierta') ? Colors.white : AppColors.error),
+                              style: AppTextStyles.button.copyWith(
+                                color:
+                                    (q.plazasLibres > 0 &&
+                                        q.estado == 'abierta')
+                                    ? Colors.white
+                                    : AppColors.error,
+                              ),
                             ),
                           ),
                   ),

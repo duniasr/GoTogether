@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; 
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -203,7 +204,19 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
 
     try {
       final user = FirebaseAuth.instance.currentUser;
-      final organizadorNombre = user?.displayName?.isNotEmpty == true ? user!.displayName! : (user?.email ?? 'Unknown');
+      String organizadorNombre = user?.displayName?.isNotEmpty == true ? user!.displayName! : (user?.email ?? 'Unknown');
+
+      bool isVerificado = false;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data();
+          isVerificado = data?['rol'] == 'verificado';
+          if (isVerificado && data?['nombreEmpresa'] != null && data!['nombreEmpresa'].toString().isNotEmpty) {
+            organizadorNombre = data['nombreEmpresa'];
+          }
+        }
+      }
 
       await widget.service.crearQuedada(
         titulo: _tituloCtrl.text.trim(),
@@ -214,7 +227,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         latitud: lat,
         longitud: lon,
         estado: 'abierta',
-        esVerificado: false,
+        esVerificado: isVerificado,
         fechaInicio: _fechaInicio!,
         fechaFin: _fechaFin!,
       );

@@ -12,6 +12,42 @@ import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
+
+// Caché global para evitar abusar de Nominatim o la API de Geocoding
+final Map<String, String> _addressCache = {};
+
+// Cola global para peticiones a Nominatim (máx 1 por segundo)
+class _GeocodeQueue {
+  static final _queue = <Function>[];
+  static bool _isProcessing = false;
+
+  static Future<String> enqueue(Future<String> Function() task) {
+    final completer = Completer<String>();
+    _queue.add(() async {
+      try {
+        final result = await task();
+        completer.complete(result);
+      } catch (e) {
+        completer.completeError(e);
+      }
+    });
+    _processQueue();
+    return completer.future;
+  }
+
+  static Future<void> _processQueue() async {
+    if (_isProcessing) return;
+    _isProcessing = true;
+    while (_queue.isNotEmpty) {
+      final task = _queue.removeAt(0);
+      await task();
+      // Nominatim pide 1 request por segundo máximo
+      await Future.delayed(const Duration(seconds: 1));
+    }
+    _isProcessing = false;
+  }
+}
 
 class EventCard extends StatelessWidget {
   final Quedada quedada;
@@ -47,21 +83,28 @@ class EventCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(
-                  quedada.titulo.isEmpty ? 'No title' : quedada.titulo,
-                  style: AppTextStyles.headlineSmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        quedada.titulo.isEmpty ? 'No title' : quedada.titulo,
+                        style: AppTextStyles.headlineSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (quedada.esVerificado) ...[
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.verified_rounded,
+                        color: Color(0xFFFFAA00),
+                        size: 20,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (quedada.esVerificado) ...[
-                const SizedBox(width: 6),
-                const Icon(
-                  Icons.verified_rounded,
-                  color: Color(0xFFFFAA00),
-                  size: 20,
-                ),
-              ],
               if (onDelete != null) ...[
                 const SizedBox(width: 4),
                 Tooltip(
@@ -167,7 +210,7 @@ class EventCard extends StatelessWidget {
                   child: FutureBuilder<String>(
                     future: _obtenerDireccion(quedada.ubicacion.latitude, quedada.ubicacion.longitude),
                     builder: (context, snapshot) {
-                      final locationText = snapshot.data ?? 'View location';
+                      final locationText = snapshot.data ?? 'Loading address...';
                       return Text(
                         locationText,
                         style: AppTextStyles.labelSmall.copyWith(
@@ -423,8 +466,15 @@ class EventCard extends StatelessWidget {
   }
 
   Future<String> _obtenerDireccion(double lat, double lon) async {
+    final cacheKey = '${lat.toStringAsFixed(4)}_${lon.toStringAsFixed(4)}';
+    if (_addressCache.containsKey(cacheKey)) {
+      return _addressCache[cacheKey]!;
+    }
+
+    String result = 'Loading address...';
+
     if (kIsWeb) {
-      return _getNominatimAddress(lat, lon);
+      result = await _getNominatimAddress(lat, lon);
     } else {
       try {
         final placemarks = await placemarkFromCoordinates(lat, lon);
@@ -434,41 +484,51 @@ class EventCard extends StatelessWidget {
           final locality = p.locality?.isNotEmpty == true ? p.locality! : (p.subLocality ?? "");
           
           if (street.isNotEmpty && locality.isNotEmpty) {
-            return '$street, $locality';
+            result = '$street, $locality';
           } else if (street.isNotEmpty) {
-            return street;
+            result = street;
           } else if (locality.isNotEmpty) {
-            return locality;
+            result = locality;
           } else if (p.name?.isNotEmpty == true) {
-            return p.name!;
+            result = p.name!;
           }
         }
-      } catch (_) {}
-      
-      // Fallback a Nominatim si geocoding nativo falla (muy común en emuladores)
-      return _getNominatimAddress(lat, lon);
+      } catch (_) {
+        // Fallback a Nominatim si geocoding nativo falla
+        result = await _getNominatimAddress(lat, lon);
+      }
     }
+
+    _addressCache[cacheKey] = result;
+    return result;
   }
 
   Future<String> _getNominatimAddress(double lat, double lon) async {
-    try {
-      final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
-      final response = await http.get(url, headers: {
-        'User-Agent': 'GoTogetherApp/1.0'
-      }).timeout(const Duration(seconds: 4));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final displayName = data['display_name'] as String?;
-        if (displayName != null && displayName.isNotEmpty) {
-          final parts = displayName.split(',');
-          if (parts.length > 2) {
-            return '${parts[0].trim()}, ${parts[1].trim()}';
-          }
-          return displayName;
+    return _GeocodeQueue.enqueue(() async {
+      try {
+        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=$lat&lon=$lon');
+        
+        // En Web, añadir User-Agent causa CORS preflight que falla
+        Map<String, String>? headers;
+        if (!kIsWeb) {
+          headers = {'User-Agent': 'GoTogetherApp/1.0'};
         }
-      }
-    } catch (_) {}
-    return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+        
+        final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 5));
+        if (response.statusCode == 200) {
+          final data = json.decode(response.body);
+          final displayName = data['display_name'] as String?;
+          if (displayName != null && displayName.isNotEmpty) {
+            final parts = displayName.split(',');
+            if (parts.length > 2) {
+              return '${parts[0].trim()}, ${parts[1].trim()}';
+            }
+            return displayName;
+          }
+        }
+      } catch (_) {}
+      return 'Lat: ${lat.toStringAsFixed(4)}, Lon: ${lon.toStringAsFixed(4)}';
+    });
   }
 
   Future<void> _mostrarDialogoReporte(BuildContext context) async {
