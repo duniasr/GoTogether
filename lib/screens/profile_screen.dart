@@ -101,7 +101,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _bioController.text = data['bio'] ?? "";
           _companyNameController.text = data['nombreEmpresa'] ?? '';
           _cifController.text = data['cif'] ?? '';
-          _rol = data['rol'] ?? 'user';
+          _rol = data['rol'] ?? 'usuario';
           _estadoVerificacion = data['estadoVerificacion'];
         });
         _validateForm(); 
@@ -375,8 +375,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
         'nombreEmpresa': _companyNameController.text.trim(),
         'cif': _cifController.text.trim(),
-        'rol': 'user',
-        'estadoVerificacion': 'pending',
+        'rol': 'usuario',
+        'estadoVerificacion': 'pendiente',
         'fechaSolicitudVerificacion': FieldValue.serverTimestamp(),
         'revisadoPor': FieldValue.delete(),
         'fechaRevision': FieldValue.delete(),
@@ -384,8 +384,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         setState(() {
-          _rol = 'user';
-          _estadoVerificacion = 'pending';
+          _rol = 'usuario';
+          _estadoVerificacion = 'pendiente';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -519,9 +519,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildVerificationSection() {
-    final isVerified = _rol == 'verified' || _estadoVerificacion == 'approved';
-    final isPending = _estadoVerificacion == 'pending';
-    final isRejected = _estadoVerificacion == 'rejected';
+    final isVerified = _rol == 'verificado' || _estadoVerificacion == 'aprobado';
+    final isPending = _estadoVerificacion == 'pendiente';
+    final isRejected = _estadoVerificacion == 'rechazado';
 
     return AppCard(
       child: Column(

@@ -70,7 +70,7 @@ class QuedadasService {
 
         if (userDoc.exists) {
           // Si el usuario es verificado, sus eventos se crean como verificados automáticamente
-          if (userDoc.data()?['rol'] == 'verified') {
+          if (userDoc.data()?['rol'] == 'verificado') {
             esVerificadoFinal = true;
           }
 
