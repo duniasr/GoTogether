@@ -9,11 +9,13 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/admin_verification_screen.dart';
 import 'services/notification_service.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().init();
+  await AppLocalizations.init();
   runApp(const MyApp());
 }
 
@@ -22,16 +24,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GoTogether',
-      theme: AppTheme.theme,
-      debugShowCheckedModeBanner: false,
-
-      routes: {
-        '/profile': (context) => const ProfileScreen(),
+    return ValueListenableBuilder<Locale>(
+      valueListenable: AppLocalizations.localeNotifier,
+      builder: (context, locale, child) {
+        return MaterialApp(
+          key: ValueKey(locale.languageCode),
+          title: 'GoTogether',
+          theme: AppTheme.theme,
+          debugShowCheckedModeBanner: false,
+          locale: locale,
+          routes: {
+            '/profile': (context) => const ProfileScreen(),
+          },
+          home: const AppRoot(),
+        );
       },
-
-      home: const AppRoot(),
     );
   }
 }
@@ -51,7 +58,7 @@ class AppRoot extends StatelessWidget {
         }
 
         if (!snapshot.hasData) {
-          return const LoginScreen();
+          return LoginScreen();
         }
 
         final uid = snapshot.data!.uid;
@@ -77,10 +84,10 @@ class AppRoot extends StatelessWidget {
             NotificationService().startListening();
 
             if (rol == 'admin') {
-              return const AdminVerificationScreen();
+              return AdminVerificationScreen();
             }
 
-            return const HomeScreen();
+            return HomeScreen();
           },
         );
       },

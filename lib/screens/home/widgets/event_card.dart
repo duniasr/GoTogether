@@ -7,6 +7,7 @@ import '../../../app_theme.dart';
 import '../../../models/quedada.dart';
 import '../../../utils/translations.dart';
 import '../../../services/quedadas_service.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../map_screen.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -88,7 +89,7 @@ class EventCard extends StatelessWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        quedada.titulo.isEmpty ? 'No title' : quedada.titulo,
+                        quedada.titulo.isEmpty ? AppLocalizations.get('no_title') : translateDynamic(quedada.titulo),
                         style: AppTextStyles.headlineSmall,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -108,7 +109,7 @@ class EventCard extends StatelessWidget {
               if (onDelete != null) ...[
                 const SizedBox(width: 4),
                 Tooltip(
-                  message: 'Delete plan',
+                  message: AppLocalizations.get('delete_event_title'),
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
@@ -150,7 +151,7 @@ class EventCard extends StatelessWidget {
                 builder: (context) {
                   final bool isOpen = quedada.estado == 'abierta' && spots > 0;
                   final bool isFull = spots <= 0 && quedada.estado != 'cerrada' && quedada.estado != 'cancelada';
-                  final String statusText = isFull ? 'Full' : translateStatus(quedada.estado);
+                  final String statusText = isFull ? AppLocalizations.get('full_btn') : translateStatus(quedada.estado);
                   final Color bgColor = isOpen ? AppColors.success.withOpacity(0.15) : AppColors.error.withOpacity(0.15);
                   final Color textColor = isOpen ? AppColors.success : AppColors.error;
 
@@ -210,7 +211,7 @@ class EventCard extends StatelessWidget {
                   child: FutureBuilder<String>(
                     future: _obtenerDireccion(quedada.ubicacion.latitude, quedada.ubicacion.longitude),
                     builder: (context, snapshot) {
-                      final locationText = snapshot.data ?? 'Loading address...';
+                      final locationText = snapshot.data ?? AppLocalizations.get('loading_address');
                       return Text(
                         locationText,
                         style: AppTextStyles.labelSmall.copyWith(
@@ -245,7 +246,7 @@ class EventCard extends StatelessWidget {
 
           if (quedada.descripcion.isNotEmpty)
             Text(
-              quedada.descripcion,
+              translateDynamic(quedada.descripcion),
               style: AppTextStyles.bodyMedium,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -279,7 +280,7 @@ class EventCard extends StatelessWidget {
                   onPressed: () => _mostrarAsistentes(context),
                   icon: const Icon(Icons.people_outline, size: 16, color: AppColors.primary),
                   label: Text(
-                    'Attendees (${quedada.asistentesID.length})',
+                    '${AppLocalizations.get('attendees')} (${quedada.asistentesID.length})',
                     style: AppTextStyles.labelSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -294,8 +295,8 @@ class EventCard extends StatelessWidget {
             children: [
               Text(
                 spots > 0
-                    ? '$spots ${spots == 1 ? 'spot left' : 'spots left'}'
-                    : 'No spots left',
+                    ? '$spots ${AppLocalizations.get('available_spots')}'
+                    : AppLocalizations.get('full_btn'),
                 style: AppTextStyles.labelSmall.copyWith(
                   color: almostFull ? AppColors.error : AppColors.textSecondary,
                   fontWeight: almostFull ? FontWeight.w700 : FontWeight.w500,
@@ -331,8 +332,8 @@ class EventCard extends StatelessWidget {
                 color: AppColors.error.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const Text(
-                'Fully Booked',
+              child: Text(
+                AppLocalizations.get('full_btn'),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.error,
@@ -356,27 +357,27 @@ class EventCard extends StatelessWidget {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text('Admin: Edit Location', style: AppTextStyles.headlineMedium),
+          title: Text(AppLocalizations.get('admin_edit_location'), style: AppTextStyles.headlineMedium),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: latController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Latitude'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('latitude')),
               ),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: lonController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Longitude'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('longitude')),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text(AppLocalizations.get('cancel'), style: const TextStyle(color: AppColors.textSecondary)),
             ),
             FilledButton(
               onPressed: () async {
@@ -391,11 +392,11 @@ class EventCard extends StatelessWidget {
                 if (context.mounted) {
                   Navigator.pop(dialogContext);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Location updated by Admin'), backgroundColor: AppColors.success),
+                    SnackBar(content: Text(AppLocalizations.get('location_updated_admin')), backgroundColor: AppColors.success),
                   );
                 }
               },
-              child: const Text('Save'),
+              child: Text(AppLocalizations.get('save')),
             ),
           ],
         );
@@ -409,7 +410,7 @@ class EventCard extends StatelessWidget {
       builder: (dialogContext) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text('Attendees List', style: AppTextStyles.headlineMedium),
+          title: Text(AppLocalizations.get('attendees_list'), style: AppTextStyles.headlineMedium),
           content: SizedBox(
             width: double.maxFinite,
             height: 300,
@@ -423,8 +424,8 @@ class EventCard extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError || !snapshot.hasData || snapshot.data!.docs.isEmpty || quedada.asistentesID.isEmpty) {
-                  return const Center(
-                    child: Text('No attendees yet.', style: AppTextStyles.bodyMedium),
+                  return Center(
+                    child: Text(AppLocalizations.get('no_attendees'), style: AppTextStyles.bodyMedium),
                   );
                 }
 
@@ -433,8 +434,8 @@ class EventCard extends StatelessWidget {
                   itemCount: users.length,
                   itemBuilder: (context, index) {
                     final user = users[index].data() as Map<String, dynamic>?;
-                    final nombre = user?['nombre'] ?? 'Anonymous';
-                    final email = user?['email'] ?? 'No email';
+                    final nombre = user?['nombre'] ?? AppLocalizations.get('anonymous');
+                    final email = user?['email'] ?? AppLocalizations.get('no_email');
                     final fotoUrl = user?['fotoUrl'];
 
                     return ListTile(
@@ -457,7 +458,7 @@ class EventCard extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.get('close')),
             ),
           ],
         );
@@ -541,12 +542,12 @@ class EventCard extends StatelessWidget {
         return StatefulBuilder(
           builder: (stateContext, setStateDialog) {
             return AlertDialog(
-              title: const Text('Report event', style: AppTextStyles.headlineMedium),
+              title: Text(AppLocalizations.get('report_event'), style: AppTextStyles.headlineMedium),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Please, select a reason for the report:'),
+                  Text(AppLocalizations.get('reason_report')),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: motivoSeleccionado,
@@ -566,7 +567,7 @@ class EventCard extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+                  child: Text(AppLocalizations.get('cancel'), style: const TextStyle(color: AppColors.textSecondary)),
                 ),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: AppColors.error),
@@ -577,8 +578,8 @@ class EventCard extends StatelessWidget {
                       await service.reportarQuedada(quedada.id, motivoSeleccionado);
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Thank you for reporting'),
+                          SnackBar(
+                            content: Text(AppLocalizations.get('thanks_report')),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -594,7 +595,7 @@ class EventCard extends StatelessWidget {
                       }
                     }
                   },
-                  child: const Text('Submit report'),
+                  child: Text(AppLocalizations.get('submit_report')),
                 ),
               ],
             );

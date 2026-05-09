@@ -9,6 +9,8 @@ import '../services/quedadas_service.dart';
 import '../models/quedada.dart';
 import '../app_theme.dart';
 import 'home/widgets/event_card.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/translations.dart';
 
 class MapScreen extends StatefulWidget {
   final LatLng? initialCenter;
@@ -61,7 +63,7 @@ class _MapScreenState extends State<MapScreen> {
     );
 
     final markerData = await _createCustomPinWithText(
-      q.titulo,
+      translateDynamic(q.titulo),
       q.esVerificado
           ? const Color(0xFFF59E0B)
           : const Color(0xFF1C63A6), // Naranja y Azul premium
@@ -266,8 +268,8 @@ class _MapScreenState extends State<MapScreen> {
               backgroundColor: AppColors.surface,
               foregroundColor: AppColors.textPrimary,
               elevation: 0,
-              title: const Text(
-                'Location on Map',
+              title: Text(
+                AppLocalizations.get('location'),
                 style: AppTextStyles.headlineSmall,
               ),
               leading: IconButton(
@@ -406,16 +408,16 @@ class _MapScreenState extends State<MapScreen> {
                                         await showDialog<bool>(
                                           context: context,
                                           builder: (ctx) => AlertDialog(
-                                            title: const Text('Leave event'),
+                                            title: Text(AppLocalizations.get('leave_event_title')),
                                             content: Text(
-                                              'Are you sure you want to leave "${q.titulo}"?',
+                                              '${AppLocalizations.get('confirm_leave_event')} "${translateDynamic(q.titulo)}"?',
                                             ),
                                             actions: [
                                               TextButton(
                                                 onPressed: () => Navigator.of(
                                                   ctx,
                                                 ).pop(false),
-                                                child: const Text('Cancel'),
+                                                child: Text(AppLocalizations.get('cancel')),
                                               ),
                                               FilledButton(
                                                 style: FilledButton.styleFrom(
@@ -424,7 +426,7 @@ class _MapScreenState extends State<MapScreen> {
                                                 ),
                                                 onPressed: () =>
                                                     Navigator.of(ctx).pop(true),
-                                                child: const Text('Leave'),
+                                                child: Text(AppLocalizations.get('leave')),
                                               ),
                                             ],
                                           ),
@@ -441,9 +443,9 @@ class _MapScreenState extends State<MapScreen> {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
-                                            'You have left the plan.',
+                                            AppLocalizations.get('left_plan_msg'),
                                           ),
                                         ),
                                       );
@@ -472,7 +474,7 @@ class _MapScreenState extends State<MapScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    'Leave',
+                                    AppLocalizations.get('leave'),
                                     style: AppTextStyles.button.copyWith(
                                       color: AppColors.error,
                                     ),
@@ -490,9 +492,9 @@ class _MapScreenState extends State<MapScreen> {
                                       ScaffoldMessenger.of(
                                         context,
                                       ).showSnackBar(
-                                        const SnackBar(
+                                        SnackBar(
                                           content: Text(
-                                            'You have joined the plan!',
+                                            AppLocalizations.get('joined_plan_msg'),
                                           ),
                                           backgroundColor: Colors.green,
                                         ),
@@ -524,8 +526,8 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                             child: Text(
                               (q.plazasLibres > 0 && q.estado == 'abierta')
-                                  ? 'Join'
-                                  : (q.estado == 'cerrada' ? 'Closed' : 'Full'),
+                                  ? AppLocalizations.get('join_btn')
+                                  : (q.estado == 'cerrada' ? AppLocalizations.get('closed_btn') : AppLocalizations.get('full_btn')),
                               style: AppTextStyles.button.copyWith(
                                 color:
                                     (q.plazasLibres > 0 &&

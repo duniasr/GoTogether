@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../l10n/app_localizations.dart';
 
 class DateTimePicker extends StatefulWidget {
   final String label;
@@ -67,7 +68,7 @@ class _DateTimePickerState extends State<DateTimePicker> {
       onTap: _pick,
       child: InputDecorator(
         decoration: InputDecoration(
-          labelText: '${widget.label} Date',
+          labelText: widget.label,
           prefixIcon: const Icon(Icons.calendar_today_outlined),
           suffixIcon: widget.value != null
               ? IconButton(
@@ -77,7 +78,7 @@ class _DateTimePickerState extends State<DateTimePicker> {
               : null,
         ),
         child: Text(
-          widget.value != null ? _fmt(widget.value!) : 'No date',
+          widget.value != null ? _fmt(widget.value!) : AppLocalizations.get('no_date'),
           style: AppTextStyles.bodyMedium.copyWith(
             color: widget.value != null ? null : AppColors.textHint,
           ),

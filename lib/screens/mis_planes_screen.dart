@@ -11,6 +11,7 @@ import 'package:geocoding/geocoding.dart';
 import 'home/widgets/location_picker_screen.dart';
 import '../widgets/date_time_picker.dart';
 import 'home/widgets/event_card.dart';
+import '../l10n/app_localizations.dart';
 
 class MisPlanesScreen extends StatefulWidget {
   const MisPlanesScreen({super.key});
@@ -70,18 +71,18 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
                         AppSpacing.sm,
                       ),
                       child: Text(
-                        'My Plans',
+                        AppLocalizations.get('my_plans'),
                         style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
                       ),
                     ),
-                    const TabBar(
+                    TabBar(
                       indicatorColor: Colors.white,
                       labelColor: Colors.white,
                       unselectedLabelColor: Colors.white70,
                       dividerColor: Colors.transparent,
                       tabs: [
-                        Tab(text: 'Created'),
-                        Tab(text: 'Joined'),
+                        Tab(text: AppLocalizations.get('created')),
+                        Tab(text: AppLocalizations.get('joined')),
                       ],
                     ),
                   ],
@@ -94,13 +95,13 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
                       stream: _creadosStream,
                       service: _service,
                       esCreador: true,
-                      textoVacio: 'You haven\'t created any plans yet',
+                      textoVacio: AppLocalizations.get('no_plans_created'),
                     ),
                     _PlanesTab(
                       stream: _unidosStream,
                       service: _service,
                       esCreador: false,
-                      textoVacio: 'You haven\'t joined any plans yet',
+                      textoVacio: AppLocalizations.get('no_plans_joined'),
                     ),
                   ],
                 ),
@@ -145,19 +146,19 @@ class _PlanesTabState extends State<_PlanesTab>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            title: const Text('Delete plan'),
+            title: Text(AppLocalizations.get('delete_event_title')),
             content: Text(
-              'Are you sure you want to delete "${q.titulo}"?\nThis action cannot be undone.',
+              '${AppLocalizations.get('confirm_delete_event')} "${translateDynamic(q.titulo)}"?',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.get('cancel')),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: AppColors.error),
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Delete'),
+                child: Text(AppLocalizations.get('delete_account')),
               ),
             ],
           ),
@@ -190,17 +191,17 @@ class _PlanesTabState extends State<_PlanesTab>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            title: const Text('Leave plan'),
-            content: Text('Are you sure you want to leave "${q.titulo}"?'),
+            title: Text(AppLocalizations.get('leave_event_title')),
+            content: Text('${AppLocalizations.get('confirm_leave_event')} "${translateDynamic(q.titulo)}"?'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(AppLocalizations.get('cancel')),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: AppColors.error),
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Leave'),
+                child: Text(AppLocalizations.get('leave')),
               ),
             ],
           ),
@@ -307,7 +308,7 @@ class _PlanesTabState extends State<_PlanesTab>
                             elevation: 0,
                           ),
                           child: Text(
-                            widget.esCreador ? 'Modify' : 'Leave',
+                            widget.esCreador ? AppLocalizations.get('modify') : AppLocalizations.get('leave'),
                             style: AppTextStyles.button.copyWith(
                               color: widget.esCreador ? Colors.white : AppColors.error,
                             ),
@@ -325,7 +326,7 @@ class _PlanesTabState extends State<_PlanesTab>
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
                   child: Text(
-                    'Past Plans',
+                    AppLocalizations.get('past_plans'),
                     style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -353,9 +354,9 @@ class _PlanesTabState extends State<_PlanesTab>
                                 color: AppColors.surfaceAlt,
                                 borderRadius: BorderRadius.circular(AppRadius.sm),
                               ),
-                              child: const Text(
-                                'Past Event (Read Only)',
-                                style: TextStyle(color: AppColors.textHint, fontWeight: FontWeight.bold),
+                              child: Text(
+                                AppLocalizations.get('past_event_readonly'),
+                                style: const TextStyle(color: AppColors.textHint, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
@@ -548,13 +549,13 @@ class _EditDialogState extends State<_EditDialog> {
     }
 
     if (_fechaInicio == null || _fechaFin == null) {
-      setState(() => _errorMessage = 'Please select both start and end dates.');
+      setState(() => _errorMessage = AppLocalizations.get('select_dates'));
       return;
     }
 
     if (_fechaFin!.isBefore(_fechaInicio!) ||
         _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
-      setState(() => _errorMessage = 'End date must be after start date.');
+      setState(() => _errorMessage = AppLocalizations.get('end_after_start'));
       return;
     }
 
@@ -584,13 +585,13 @@ class _EditDialogState extends State<_EditDialog> {
       if (!mounted) return;
       Navigator.pop(context);
       widget.messenger.showSnackBar(
-        const SnackBar(content: Text('Plan updated.')),
+        SnackBar(content: Text(AppLocalizations.get('plan_updated'))),
       );
     } catch (e) {
       if (mounted) {
         setState(() {
           _guardando = false;
-          _errorMessage = 'Error updating plan: $e';
+          _errorMessage = '${AppLocalizations.get('error')}: $e';
         });
       }
     }
@@ -603,7 +604,7 @@ class _EditDialogState extends State<_EditDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      title: const Text('Edit plan', style: AppTextStyles.headlineMedium),
+      title: Text(AppLocalizations.get('edit_plan'), style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -613,14 +614,14 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _titulo,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('title')),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty)
-                    return 'Title cannot be empty';
+                    return AppLocalizations.get('required_field');
                   if (!RegExp(
                     r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]',
                   ).hasMatch(v.trim())) {
-                    return 'Must include at least one letter';
+                    return AppLocalizations.get('must_include_letter');
                   }
                   return null;
                 },
@@ -630,16 +631,16 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _descripcion,
                 maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('description')),
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Description cannot be empty'
+                    ? AppLocalizations.get('required_field')
                     : null,
               ),
               const SizedBox(height: AppSpacing.md),
 
               DropdownButtonFormField<String>(
                 value: _tematica,
-                decoration: const InputDecoration(labelText: 'Category'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('category')),
                 items: _tematicas
                     .map(
                       (t) => DropdownMenuItem(
@@ -657,22 +658,22 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _cupo,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Max participants',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.get('max_participants'),
                 ),
                 validator: (v) {
                   final n = int.tryParse(v?.trim() ?? '');
-                  if (n == null) return 'Enter a valid number';
-                  if (n <= 0) return 'Capacity must be greater than 0';
+                  if (n == null) return AppLocalizations.get('required');
+                  if (n <= 0) return AppLocalizations.get('required');
                   if (n < _asistentesActuales) {
-                    return 'Minimum $_asistentesActuales (people already joined)';
+                    return AppLocalizations.get('capacity_joined').replaceAll('{count}', _asistentesActuales.toString());
                   }
                   return null;
                 },
               ),
               const SizedBox(height: AppSpacing.md),
               DateTimePicker(
-                label: 'Start',
+                label: AppLocalizations.get('start'),
                 value: _fechaInicio,
                 onPicked: (dt) {
                   setState(() {
@@ -687,7 +688,7 @@ class _EditDialogState extends State<_EditDialog> {
 
               const SizedBox(height: AppSpacing.md),
               DateTimePicker(
-                label: 'End',
+                label: AppLocalizations.get('end'),
                 value: _fechaFin,
                 onPicked: (dt) => setState(() => _fechaFin = dt),
                 onCleared: () => setState(() => _fechaFin = null),
@@ -696,7 +697,7 @@ class _EditDialogState extends State<_EditDialog> {
 
               DropdownButtonFormField<String>(
                 initialValue: _estado,
-                decoration: const InputDecoration(labelText: 'Status'),
+                decoration: InputDecoration(labelText: AppLocalizations.get('status')),
                 items: _estados
                     .map(
                       (e) => DropdownMenuItem(
@@ -713,7 +714,7 @@ class _EditDialogState extends State<_EditDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Location *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+                  Text('${AppLocalizations.get('location')} *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
                   TextButton.icon(
                     onPressed: () async {
                       LatLng? initialLoc;
@@ -732,7 +733,7 @@ class _EditDialogState extends State<_EditDialog> {
                         setState(() {
                           _latCtrl.text = picked.latitude.toStringAsFixed(6);
                           _lonCtrl.text = picked.longitude.toStringAsFixed(6);
-                          _direccionCtrl.text = 'Loading address...';
+                          _direccionCtrl.text = AppLocalizations.get('loading_address');
                           _errorMessage = null;
                           _successMessage = 'Location successfully updated';
                         });
@@ -766,7 +767,7 @@ class _EditDialogState extends State<_EditDialog> {
                       }
                     },
                     icon: const Icon(Icons.map_outlined, size: 18),
-                    label: const Text('Pick on map'),
+                    label: Text(AppLocalizations.get('location_pick_map')),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -778,8 +779,8 @@ class _EditDialogState extends State<_EditDialog> {
               TextFormField(
                 controller: _direccionCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Address or Location *',
-                  hintText: 'Type address and click search icon, or pick on map',
+                  labelText: '${AppLocalizations.get('location')} *',
+                  hintText: AppLocalizations.get('address_hint'),
                   prefixIcon: const Icon(Icons.place_outlined),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.search, color: AppColors.primary),
@@ -799,12 +800,12 @@ class _EditDialogState extends State<_EditDialog> {
                           _latCtrl.text = coords.latitude.toStringAsFixed(6);
                           _lonCtrl.text = coords.longitude.toStringAsFixed(6);
                           _errorMessage = null;
-                          _successMessage = 'Location successfully updated';
+                          _successMessage = AppLocalizations.get('location_updated');
                         });
                       } else {
                         setState(() {
                           _successMessage = null;
-                          _errorMessage = 'Location not found. Try using "Pick on map"';
+                          _errorMessage = AppLocalizations.get('location_not_found');
                         });
                       }
                     },
@@ -821,7 +822,7 @@ class _EditDialogState extends State<_EditDialog> {
                 },
                 validator: (v) {
                   if (_latCtrl.text.isEmpty || _lonCtrl.text.isEmpty) {
-                    return 'Please click the search icon or pick on map';
+                    return AppLocalizations.get('location_not_found');
                   }
                   return null;
                 },
@@ -899,7 +900,7 @@ class _EditDialogState extends State<_EditDialog> {
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
+                      child: Text(AppLocalizations.get('cancel')),
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
@@ -913,7 +914,7 @@ class _EditDialogState extends State<_EditDialog> {
                                 strokeWidth: 2,
                               ),
                             )
-                          : const Text('Update'),
+                          : Text(AppLocalizations.get('update_btn')),
                     ),
                   ],
                 ),

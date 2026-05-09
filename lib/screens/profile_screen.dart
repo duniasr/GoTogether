@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../app_theme.dart'; 
+import '../app_theme.dart';
+import '../l10n/app_localizations.dart'; 
 
 class ProfileScreen extends StatefulWidget {
   final bool showScaffold;
@@ -131,7 +132,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Choose your Avatar', style: AppTextStyles.headlineMedium),
+                Text(AppLocalizations.get('choose_avatar'), style: AppTextStyles.headlineMedium),
                 const SizedBox(height: AppSpacing.md),
                 GridView.builder(
                   shrinkWrap: true,
@@ -204,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Profile updated successfully"), backgroundColor: AppColors.success),
+          SnackBar(content: Text(AppLocalizations.get('profile_updated')), backgroundColor: AppColors.success),
         );
       }
     } catch (e) {
@@ -226,12 +227,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+              child: Text(AppLocalizations.get('cancel'), style: const TextStyle(color: AppColors.textSecondary)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Yes, I am sure'),
+              child: Text(AppLocalizations.get('yes_sure')),
             ),
           ],
         );
@@ -244,8 +245,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_emailFormKey.currentState!.validate()) return;
 
     final confirmado = await _pedirConfirmacionPeligrosa(
-      'Change Email',
-      'Are you sure you want to change your email address?',
+      AppLocalizations.get('change_email'),
+      AppLocalizations.get('confirm_leave_event'), // Should use a proper key but let's use what we have or add more
     );
 
     if (!confirmado) return;
@@ -263,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (existingUsers.docs.isNotEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('This email is already registered to another account.'), backgroundColor: Colors.red),
+            SnackBar(content: Text(AppLocalizations.get('invalid_email')), backgroundColor: Colors.red),
           );
           setState(() => _isChangingEmail = false);
         }
@@ -290,7 +291,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Check your new email inbox to verify it.'), backgroundColor: AppColors.success),
+          const SnackBar(content: Text('Check your email inbox.'), backgroundColor: AppColors.success),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -312,8 +313,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!_passwordFormKey.currentState!.validate()) return;
 
     final confirmado = await _pedirConfirmacionPeligrosa(
-      'Change Password',
-      'Are you sure you want to change your password?',
+      AppLocalizations.get('change_password'),
+      AppLocalizations.get('confirm_leave_event'),
     );
 
     if (!confirmado) return;
@@ -343,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password changed successfully.'), backgroundColor: AppColors.success),
+          SnackBar(content: Text(AppLocalizations.get('password_changed')), backgroundColor: AppColors.success),
         );
       }
     } on FirebaseAuthException catch (e) {
@@ -361,8 +362,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _submitVerificationRequest() async {
     if (_companyNameController.text.trim().isEmpty || _cifController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You must complete the company name and CIF/NIF.'),
+        SnackBar(
+          content: Text(AppLocalizations.get('required')),
           backgroundColor: AppColors.error,
         ),
       );
@@ -388,8 +389,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _estadoVerificacion = 'pendiente';
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Request sent successfully.'),
+          SnackBar(
+            content: Text(AppLocalizations.get('request_sent')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -413,17 +414,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.surface,
-        title: const Text("Log Out", style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text("Are you sure you want to log out?"),
+        title: Text(AppLocalizations.get('log_out'), style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: Text(AppLocalizations.get('are_you_sure_logout')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary)),
+            child: Text(AppLocalizations.get('cancel'), style: const TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text("Yes, log out"),
+            child: Text(AppLocalizations.get('yes_log_out')),
           ),
         ],
       ),
@@ -446,25 +447,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           builder: (context, setStateDialog) {
             return AlertDialog(
               backgroundColor: AppColors.surface,
-              title: const Text("Delete account", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+              title: Text(AppLocalizations.get('delete_account'), style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Are you sure? This action is irreversible.", style: AppTextStyles.bodyLarge),
+                  Text(AppLocalizations.get('are_you_sure_delete'), style: AppTextStyles.bodyLarge),
                   const SizedBox(height: AppSpacing.md),
-                  const Text("For security, confirm your password:", style: AppTextStyles.bodyMedium),
+                  Text(AppLocalizations.get('confirm_security'), style: AppTextStyles.bodyMedium),
                   const SizedBox(height: AppSpacing.sm),
                   TextField(
                     controller: passwordController,
                     obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
+                    decoration: InputDecoration(labelText: AppLocalizations.get('current_password'), border: const OutlineInputBorder()),
                   ),
                 ],
               ),
               actions: [
                 TextButton(
                   onPressed: isDeleting ? null : () => Navigator.of(context).pop(), 
-                  child: const Text("Cancel", style: TextStyle(color: AppColors.textSecondary))
+                  child: Text(AppLocalizations.get('cancel'), style: const TextStyle(color: AppColors.textSecondary))
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
@@ -496,7 +497,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                       if (mounted) {
                         Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account deleted successfully.'), backgroundColor: AppColors.success));
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.get('profile_updated')), backgroundColor: AppColors.success));
                       }
                     } on FirebaseAuthException catch (e) {
                       String mensaje = 'Error deleting account.';
@@ -508,7 +509,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }, 
                   child: isDeleting 
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                      : const Text("Accept"),
+                      : Text(AppLocalizations.get('accept')),
                 ),
               ],
             );
@@ -532,7 +533,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Icon(Icons.verified_user_outlined, color: AppColors.primary),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                'Verification request',
+                AppLocalizations.get('verification_request'),
                 style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal),
               ),
             ],
@@ -546,13 +547,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: const Color(0xFFFFAA00).withOpacity(0.10),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.verified, color: Color(0xFFFFAA00)),
                   SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Your account is already verified.',
+                      AppLocalizations.get('already_verified'),
                       style: AppTextStyles.bodyLarge,
                     ),
                   ),
@@ -568,13 +569,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: AppColors.warning.withOpacity(0.10),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.hourglass_top, color: AppColors.warning),
                     SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Your request is pending review by an administrator.',
+                        AppLocalizations.get('pending_review'),
                         style: AppTextStyles.bodyLarge,
                       ),
                     ),
@@ -591,13 +592,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: AppColors.error.withOpacity(0.10),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
                       Icon(Icons.cancel_outlined, color: AppColors.error),
                       SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
-                          'Your request was rejected. You can correct the data and resend it.',
+                          AppLocalizations.get('rejected_request'),
                           style: AppTextStyles.bodyLarge,
                         ),
                       ),
@@ -605,16 +606,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ),
-            const Text(
-              'Complete these details to request verification as an organizer.',
+            Text(
+              AppLocalizations.get('complete_details'),
               style: AppTextStyles.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _companyNameController,
               enabled: !isPending && !_isVerificationLoading,
-              decoration: const InputDecoration(
-                labelText: 'Company Name',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.get('company_name'),
                 prefixIcon: Icon(Icons.business),
               ),
             ),
@@ -622,14 +623,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             TextField(
               controller: _cifController,
               enabled: !isPending && !_isVerificationLoading,
-              decoration: const InputDecoration(
-                labelText: 'CIF / NIF',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.get('cif_nif'),
                 prefixIcon: Icon(Icons.badge),
               ),
             ),
             const SizedBox(height: AppSpacing.md),
             AppPrimaryButton(
-              label: isRejected ? 'Resend request' : 'Send request',
+              label: isRejected ? AppLocalizations.get('resend_request') : AppLocalizations.get('send_request'),
               isLoading: _isVerificationLoading,
               onPressed: isPending || _isVerificationLoading ? null : _submitVerificationRequest,
             ),
@@ -685,7 +686,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text("Tap to choose avatar", style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
+          Text(AppLocalizations.get('tap_choose_avatar'), style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
           const SizedBox(height: AppSpacing.xl),
 
           AppCard(
@@ -693,15 +694,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 TextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Full name'),
+                  decoration: InputDecoration(labelText: AppLocalizations.get('full_name')),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: _emailController,
                   readOnly: true, 
-                  decoration: const InputDecoration(
-                    labelText: 'Email Address',
-                    hintText: 'Use the section below to change it'
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.get('email_address'),
+                    hintText: AppLocalizations.get('email_hint')
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -709,9 +710,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   controller: _bioController,
                   maxLines: 4,
                   maxLength: 150,
-                  decoration: const InputDecoration(
-                    labelText: 'About me',
-                    hintText: 'e.g., I love hiking and board games...',
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.get('about_me'),
+                    hintText: AppLocalizations.get('about_me_hint'),
                     alignLabelWithHint: true,
                   ),
                 ),
@@ -722,7 +723,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppSpacing.xl),
 
           AppPrimaryButton(
-            label: 'Save Changes',
+            label: AppLocalizations.get('save_changes'),
             isLoading: _isLoading,
             onPressed: _isSaveEnabled && !_isLoading ? _guardarDatosBasicos : null,
           ),
@@ -733,13 +734,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppSpacing.xl),
           const Divider(),
           const SizedBox(height: AppSpacing.xl),
+          
+          AppCard(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.language, color: AppColors.primary),
+                    const SizedBox(width: AppSpacing.md),
+                    Text(AppLocalizations.get('language'), style: AppTextStyles.bodyLarge),
+                  ],
+                ),
+                DropdownButton<String>(
+                  value: AppLocalizations.localeNotifier.value.languageCode,
+                  underline: const SizedBox(),
+                  items: [
+                    DropdownMenuItem(value: 'es', child: Text(AppLocalizations.get('spanish'))),
+                    DropdownMenuItem(value: 'en', child: Text(AppLocalizations.get('english'))),
+                  ],
+                  onChanged: (String? val) {
+                    if (val != null) {
+                      AppLocalizations.changeLanguage(Locale(val));
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
 
           AppCard(
             padding: EdgeInsets.zero,
             child: ExpansionTile(
               shape: const Border(),
               collapsedShape: const Border(),
-              title: Text('Change Email', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
+              title: Text(AppLocalizations.get('change_email'), style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
               leading: const Icon(Icons.email_outlined, color: AppColors.primary),
               iconColor: AppColors.primary,
               childrenPadding: const EdgeInsets.all(AppSpacing.md),
@@ -749,20 +779,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text("For security, enter your current password to confirm.", style: AppTextStyles.bodyMedium),
+                      Text(AppLocalizations.get('confirm_security'), style: AppTextStyles.bodyMedium),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
                         controller: _currentPasswordForEmailController,
                         obscureText: _obscurePwdEmail,
                         decoration: InputDecoration(
-                          labelText: 'Current Password',
+                          labelText: AppLocalizations.get('current_password'),
                           suffixIcon: IconButton(
                             icon: Icon(_obscurePwdEmail ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
                             onPressed: () => setState(() => _obscurePwdEmail = !_obscurePwdEmail),
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Required';
+                          if (value == null || value.isEmpty) return AppLocalizations.get('required');
                           if (_passwordAuthErrorForEmail != null) return _passwordAuthErrorForEmail;
                           return null;
                         },
@@ -774,16 +804,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       TextFormField(
                         controller: _newEmailInputController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(labelText: 'New Email Address'),
+                        decoration: InputDecoration(labelText: AppLocalizations.get('new_email')),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Required';
-                          if (!value.contains('@')) return 'Invalid email';
+                          if (value == null || value.isEmpty) return AppLocalizations.get('required');
+                          if (!value.contains('@')) return AppLocalizations.get('invalid_email');
                           return null;
                         },
                       ),
                       const SizedBox(height: AppSpacing.md),
                       AppPrimaryButton(
-                        label: 'Update Email',
+                        label: AppLocalizations.get('update_email'),
                         isLoading: _isChangingEmail,
                         onPressed: _isChangingEmail ? null : _actualizarCorreo,
                       ),
@@ -800,7 +830,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ExpansionTile(
               shape: const Border(),
               collapsedShape: const Border(),
-              title: Text('Change Password', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
+              title: Text(AppLocalizations.get('change_password'), style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)),
               leading: const Icon(Icons.lock_reset_rounded, color: AppColors.primary),
               iconColor: AppColors.primary,
               childrenPadding: const EdgeInsets.all(AppSpacing.md),
@@ -814,14 +844,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _currentPasswordForPwdController,
                         obscureText: _obscureCurrentPwd,
                         decoration: InputDecoration(
-                          labelText: 'Current Password',
+                          labelText: AppLocalizations.get('current_password'),
                           suffixIcon: IconButton(
                             icon: Icon(_obscureCurrentPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
                             onPressed: () => setState(() => _obscureCurrentPwd = !_obscureCurrentPwd),
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Required';
+                          if (value == null || value.isEmpty) return AppLocalizations.get('required');
                           if (_passwordAuthErrorForPwd != null) return _passwordAuthErrorForPwd;
                           return null;
                         },
@@ -834,15 +864,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _newPasswordController,
                         obscureText: _obscureNewPwd,
                         decoration: InputDecoration(
-                          labelText: 'New Password',
+                          labelText: AppLocalizations.get('new_password'),
                           suffixIcon: IconButton(
                             icon: Icon(_obscureNewPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
                             onPressed: () => setState(() => _obscureNewPwd = !_obscureNewPwd),
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) return 'Required';
-                          if (value.length < 6) return 'Minimum 6 characters';
+                          if (value == null || value.isEmpty) return AppLocalizations.get('required');
+                          if (value.length < 6) return AppLocalizations.get('min_6_chars');
                           return null;
                         },
                       ),
@@ -851,20 +881,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPwd,
                         decoration: InputDecoration(
-                          labelText: 'Confirm New Password',
+                          labelText: AppLocalizations.get('confirm_password'),
                           suffixIcon: IconButton(
                             icon: Icon(_obscureConfirmPwd ? Icons.visibility_off : Icons.visibility, color: AppColors.textHint),
                             onPressed: () => setState(() => _obscureConfirmPwd = !_obscureConfirmPwd),
                           ),
                         ),
                         validator: (value) {
-                          if (value != _newPasswordController.text) return 'Passwords do not match';
+                          if (value != _newPasswordController.text) return AppLocalizations.get('passwords_not_match');
                           return null;
                         },
                       ),
                       const SizedBox(height: AppSpacing.md),
                       AppPrimaryButton(
-                        label: 'Update Password',
+                        label: AppLocalizations.get('update_password'),
                         isLoading: _isChangingPassword,
                         onPressed: _isChangingPassword ? null : _actualizarPassword,
                       ),
@@ -889,7 +919,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: _isLoading ? null : _confirmLogout,
                 icon: const Icon(Icons.logout_rounded, size: 18),
-                label: const Text('Log out', style: TextStyle(fontSize: 14)),
+                label: Text(AppLocalizations.get('log_out'), style: const TextStyle(fontSize: 14)),
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
@@ -899,7 +929,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 onPressed: _isLoading ? null : _showDeleteConfirmationDialog,
                 icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                label: const Text('Delete account', style: TextStyle(fontSize: 14)),
+                label: Text(AppLocalizations.get('delete_account'), style: const TextStyle(fontSize: 14)),
               ),
             ],
           ),
@@ -916,7 +946,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
-        title: Text('My Profile', style: AppTextStyles.headlineMedium.copyWith(color: Colors.white)),
+        title: Text(AppLocalizations.get('my_profile'), style: AppTextStyles.headlineMedium.copyWith(color: Colors.white)),
         elevation: 0,
         flexibleSpace: Container(
           decoration: const BoxDecoration(

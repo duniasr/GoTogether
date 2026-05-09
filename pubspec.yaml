@@ -24,6 +24,7 @@ dependencies:
   http: ^1.6.0
   geolocator: ^13.0.1
   profanity_filter: ^2.0.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

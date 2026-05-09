@@ -6,6 +6,7 @@ import 'map_screen.dart';
 import 'mis_planes_screen.dart';
 import 'home/widgets/explore_tab.dart';
 import 'home/widgets/create_event_dialog.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final QuedadasService _service = QuedadasService();
 
-  final List<String> _categories = [
+  List<String> get _categories => [
     'All',
     'Deporte',
     'Naturaleza',
@@ -50,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 categories: _categories,
               )
             : _currentIndex == 1
-                ? const MapScreen()
+                ? MapScreen()
                 : _currentIndex == 3
-                    ? const MisPlanesScreen()
+                    ? MisPlanesScreen()
                     : _buildPlaceholderTab(_currentIndex),
       ),
       floatingActionButton: Container(
@@ -83,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPlaceholderTab(int index) {
     if (index == 4) {
-      return const ProfileScreen();
+      return ProfileScreen();
     }
 
     return const SizedBox.shrink();
@@ -123,30 +124,30 @@ class _HomeScreenState extends State<HomeScreen> {
           fontWeight: FontWeight.w700,
         ),
         unselectedLabelStyle: AppTextStyles.labelSmall,
-        items: const [
+        items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.explore_outlined),
             activeIcon: Icon(Icons.explore_rounded),
-            label: 'Explore',
+            label: AppLocalizations.get('explore'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.map_outlined),
             activeIcon: Icon(Icons.map_rounded),
-            label: 'Map',
+            label: AppLocalizations.get('map'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.add, color: Colors.transparent),
-            label: 'Create',
+            label: AppLocalizations.get('create'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.event_note_outlined),
             activeIcon: Icon(Icons.event_note_rounded),
-            label: 'My Plans',
+            label: AppLocalizations.get('my_plans'),
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline_rounded),
             activeIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
+            label: AppLocalizations.get('profile'),
           ),
         ],
       ),

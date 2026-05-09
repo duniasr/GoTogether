@@ -13,6 +13,7 @@ import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
 import '../../../utils/bad_words_es.dart';
 import 'location_picker_screen.dart';
+import '../../../l10n/app_localizations.dart';
 Future<void> showCreateEventDialog(
   // Muestra una ventana emergente para crear un plan nuevo
   BuildContext context,
@@ -150,7 +151,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
-      setState(() => _errorMessage = 'Please review the highlighted fields.');
+      setState(() => _errorMessage = AppLocalizations.get('review_fields'));
       return;
     }
 
@@ -164,12 +165,12 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Inappropriate Content', style: TextStyle(color: Colors.red)),
-            content: const Text('Inappropriate text detected.'),
+            title: Text(AppLocalizations.get('inappropriate_content'), style: const TextStyle(color: Colors.red)),
+            content: Text(AppLocalizations.get('inappropriate_text_detected')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Got it'),
+                child: Text(AppLocalizations.get('got_it')),
               ),
             ],
           ),
@@ -178,17 +179,17 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
     }
 
     if (_fechaInicio == null || _fechaFin == null) {
-      setState(() => _errorMessage = 'Please select both start and end dates.');
+      setState(() => _errorMessage = AppLocalizations.get('select_dates'));
       return;
     }
 
     if (_fechaFin!.isBefore(_fechaInicio!) || _fechaFin!.isAtSameMomentAs(_fechaInicio!)) {
-      setState(() => _errorMessage = 'End date must be strictly after start date.');
+      setState(() => _errorMessage = AppLocalizations.get('end_after_start'));
       return;
     }
 
     if (_fechaInicio!.isBefore(DateTime.now().subtract(const Duration(minutes: 5)))) {
-      setState(() => _errorMessage = 'Start date cannot be in the past.');
+      setState(() => _errorMessage = AppLocalizations.get('start_not_past'));
       return;
     }
 
@@ -235,13 +236,13 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
       if (!mounted) return;
       Navigator.of(context).pop();
       widget.messenger.showSnackBar(
-        const SnackBar(content: Text('Plan successfully created.'), backgroundColor: Colors.green),
+        SnackBar(content: Text(AppLocalizations.get('plan_created')), backgroundColor: Colors.green),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _guardando = false;
-        _errorMessage = 'Error creating plan: $e';
+        _errorMessage = '${AppLocalizations.get('error')}: $e';
       });
     }
   }
@@ -249,7 +250,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New Plan', style: AppTextStyles.headlineMedium),
+      title: Text(AppLocalizations.get('new_plan'), style: AppTextStyles.headlineMedium),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -260,14 +261,14 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               TextFormField(
                 controller: _tituloCtrl,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Title *',
-                  prefixIcon: Icon(Icons.title_rounded),
+                decoration: InputDecoration(
+                  labelText: '${AppLocalizations.get('title')} *',
+                  prefixIcon: const Icon(Icons.title_rounded),
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Required field';
+                  if (v == null || v.trim().isEmpty) return AppLocalizations.get('required_field');
                   if (!RegExp(r'[a-zA-ZáéíóúàèìòùÁÉÍÓÚüÜñÑ]').hasMatch(v.trim())) {
-                    return 'Must include at least one letter';
+                    return AppLocalizations.get('must_include_letter');
                   }
                   return null;
                 },
@@ -276,18 +277,18 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               TextFormField(
                 controller: _descripcionCtrl,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description *',
-                  prefixIcon: Icon(Icons.notes_rounded),
+                decoration: InputDecoration(
+                  labelText: '${AppLocalizations.get('description')} *',
+                  prefixIcon: const Icon(Icons.notes_rounded),
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required field' : null,
+                validator: (v) => (v == null || v.trim().isEmpty) ? AppLocalizations.get('required_field') : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 value: _tematica,
-                decoration: const InputDecoration(
-                  labelText: 'Category *',
-                  prefixIcon: Icon(Icons.category_outlined),
+                decoration: InputDecoration(
+                  labelText: '${AppLocalizations.get('category')} *',
+                  prefixIcon: const Icon(Icons.category_outlined),
                 ),
                 items: _tematicas
                     .map((t) => DropdownMenuItem(value: t, child: Text(translateCategory(t))))
@@ -301,10 +302,10 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               const SizedBox(height: 12),
               const SizedBox(height: 12),
               
-              Text('Event Schedule *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+              Text('${AppLocalizations.get('event_schedule')} *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
               const SizedBox(height: 8),
               DateTimePicker(
-                label: 'Start (Min: Now)',
+                label: AppLocalizations.get('start_now_hint'),
                 value: _fechaInicio,
                 onPicked: (dt) {
                   setState(() {
@@ -318,7 +319,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               ),
               const SizedBox(height: 8),
               DateTimePicker(
-                label: 'End',
+                label: AppLocalizations.get('end'),
                 value: _fechaFin,
                 onPicked: (dt) => setState(() => _fechaFin = dt),
                 onCleared: () => setState(() => _fechaFin = null),
@@ -328,13 +329,13 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               TextFormField(
                 controller: _cupoCtrl,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Max Participants *',
-                  prefixIcon: Icon(Icons.groups_2_outlined),
+                decoration: InputDecoration(
+                  labelText: '${AppLocalizations.get('max_participants')} *',
+                  prefixIcon: const Icon(Icons.groups_2_outlined),
                 ),
                 validator: (v) {
                   final n = int.tryParse(v?.trim() ?? '');
-                  if (n == null || n <= 0) return 'Must be > 0';
+                  if (n == null || n <= 0) return AppLocalizations.get('must_be_positive');
                   return null;
                 },
               ),
@@ -342,7 +343,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Location *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+                  Text('${AppLocalizations.get('location')} *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
                   TextButton.icon(
                     onPressed: () async {
                       LatLng? initialLoc;
@@ -361,9 +362,9 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                         setState(() {
                           _latCtrl.text = picked.latitude.toStringAsFixed(6);
                           _lonCtrl.text = picked.longitude.toStringAsFixed(6);
-                          _direccionCtrl.text = 'Loading address...';
+                          _direccionCtrl.text = AppLocalizations.get('loading_address');
                           _errorMessage = null;
-                          _successMessage = 'Location successfully selected';
+                          _successMessage = AppLocalizations.get('location_selected');
                         });
                         try {
                           List<Placemark> placemarks = await placemarkFromCoordinates(picked.latitude, picked.longitude);
@@ -395,7 +396,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                       }
                     },
                     icon: const Icon(Icons.map_outlined, size: 18),
-                    label: const Text('Pick on map'),
+                    label: Text(AppLocalizations.get('location_pick_map')),
                     style: TextButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -407,8 +408,8 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
               TextFormField(
                 controller: _direccionCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Address or Location *',
-                  hintText: 'Type address and click search icon, or pick on map',
+                  labelText: '${AppLocalizations.get('location')} *',
+                  hintText: AppLocalizations.get('address_hint'),
                   prefixIcon: const Icon(Icons.place_outlined),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.search, color: AppColors.primary),
@@ -428,12 +429,12 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                           _latCtrl.text = coords.latitude.toStringAsFixed(6);
                           _lonCtrl.text = coords.longitude.toStringAsFixed(6);
                           _errorMessage = null;
-                          _successMessage = 'Location successfully selected';
+                          _successMessage = AppLocalizations.get('location_selected');
                         });
                       } else {
                         setState(() {
                           _successMessage = null;
-                          _errorMessage = 'Location not found. Try using "Pick on map"';
+                          _errorMessage = AppLocalizations.get('location_not_found');
                         });
                       }
                     },
@@ -527,9 +528,9 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: _guardando ? null : () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
+                  child: Text(
+                    AppLocalizations.get('cancel'),
+                    style: const TextStyle(color: AppColors.error, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -545,7 +546,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                 onPressed: _guardando ? null : _submit,
                 child: _guardando
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Create Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    : Text(AppLocalizations.get('create_plan_btn'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),

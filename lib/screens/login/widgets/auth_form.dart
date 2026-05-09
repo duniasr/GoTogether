@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 
 class AuthForm extends StatefulWidget {
   final bool isLogin;
@@ -123,7 +124,7 @@ class _AuthFormState extends State<AuthForm> {
         if (_isAdmin && _adminCodeController.text.trim() != _adminSecretCode) {
           await user.user?.delete();
           setState(() {
-            _backendAdminCodeError = 'Incorrect admin code';
+            _backendAdminCodeError = AppLocalizations.get('incorrect_admin_code');
           });
           _formKey.currentState!.validate();
           return;
@@ -156,16 +157,16 @@ class _AuthFormState extends State<AuthForm> {
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == 'user-not-found') {
-          _backendEmailError = "Invalid email";
+          _backendEmailError = AppLocalizations.get('invalid_email');
         } else if (e.code == 'wrong-password' ||
             e.code == 'invalid-credential') {
-          _backendPasswordError = "Incorrect password";
+          _backendPasswordError = AppLocalizations.get('incorrect_password');
         } else if (e.code == 'invalid-email') {
-          _backendEmailError = "Invalid email";
+          _backendEmailError = AppLocalizations.get('invalid_email');
         } else if (e.code == 'email-already-in-use') {
-          _backendEmailError = "Email already registered";
+          _backendEmailError = AppLocalizations.get('email_already_in_use');
         } else {
-          _showError("An error occurred: ${e.message}");
+          _showError("${AppLocalizations.get('error')}: ${e.message}");
         }
       });
       _formKey.currentState!.validate();
@@ -214,7 +215,7 @@ class _AuthFormState extends State<AuthForm> {
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
-              widget.isLogin ? 'Welcome Back!' : 'Create Account',
+              widget.isLogin ? AppLocalizations.get('welcome_back') : AppLocalizations.get('create_account'),
               style: AppTextStyles.displayMedium.copyWith(
                 color: AppColors.primaryDark,
               ),
@@ -223,8 +224,8 @@ class _AuthFormState extends State<AuthForm> {
             const SizedBox(height: AppSpacing.xs),
             Text(
               widget.isLogin
-                  ? 'Sign in to continue to GoTogether'
-                  : 'Join GoTogether and find your next plan',
+                  ? AppLocalizations.get('sign_in_continue')
+                  : AppLocalizations.get('join_gotogether'),
               style: AppTextStyles.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -247,14 +248,14 @@ class _AuthFormState extends State<AuthForm> {
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: TextFormField(
                           controller: _nameController,
-                          decoration: const InputDecoration(
-                            hintText: "Your Name",
-                            prefixIcon: Icon(Icons.person),
+                          decoration: InputDecoration(
+                            hintText: AppLocalizations.get('your_name'),
+                            prefixIcon: const Icon(Icons.person),
                           ),
                           validator: (value) {
                             if (!widget.isLogin &&
                                 (value == null || value.trim().isEmpty)) {
-                              return "Name is required";
+                              return AppLocalizations.get('name_required');
                             }
                             return null;
                           },
@@ -264,9 +265,9 @@ class _AuthFormState extends State<AuthForm> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        hintText: "Email",
-                        prefixIcon: Icon(Icons.email),
+                      decoration: InputDecoration(
+                        hintText: AppLocalizations.get('email'),
+                        prefixIcon: const Icon(Icons.email),
                       ),
                       onChanged: (value) {
                         if (_backendEmailError != null ||
@@ -283,10 +284,10 @@ class _AuthFormState extends State<AuthForm> {
                           return _backendEmailError;
                         }
                         if (value == null || value.trim().isEmpty) {
-                          return "Email is required";
+                          return AppLocalizations.get('required');
                         }
                         if (!_isValidEmail(value.trim())) {
-                          return "Invalid format";
+                          return AppLocalizations.get('invalid_format');
                         }
                         return null;
                       },
@@ -297,7 +298,7 @@ class _AuthFormState extends State<AuthForm> {
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
-                        hintText: "Password",
+                        hintText: AppLocalizations.get('password'),
                         prefixIcon: const Icon(Icons.lock),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -326,10 +327,10 @@ class _AuthFormState extends State<AuthForm> {
                           return _backendPasswordError;
                         }
                         if (value == null || value.isEmpty) {
-                          return "Password is required";
+                          return AppLocalizations.get('required');
                         }
                         if (!widget.isLogin && value.length < 6) {
-                          return "Password must be at least 6 characters";
+                          return AppLocalizations.get('min_6_chars');
                         }
                         return null;
                       },
@@ -343,7 +344,7 @@ class _AuthFormState extends State<AuthForm> {
                           controller: _confirmPasswordController,
                           obscureText: _obscureConfirmPassword,
                           decoration: InputDecoration(
-                            hintText: "Confirm Password",
+                            hintText: AppLocalizations.get('confirm_password'),
                             prefixIcon: const Icon(Icons.lock_outline),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -363,10 +364,10 @@ class _AuthFormState extends State<AuthForm> {
                           validator: (value) {
                             if (!widget.isLogin) {
                               if (value == null || value.isEmpty) {
-                                return "Confirm your password";
+                                return AppLocalizations.get('required');
                               }
                               if (value != _passwordController.text) {
-                                return "Passwords do not match";
+                                return AppLocalizations.get('passwords_not_match');
                               }
                             }
                             return null;
@@ -395,8 +396,8 @@ class _AuthFormState extends State<AuthForm> {
                             child: Column(
                               children: [
                                 SwitchListTile(
-                                  title: const Text(
-                                    "I am a Verified Organizer",
+                                  title: Text(
+                                    AppLocalizations.get('is_verified_organizer'),
                                     style: AppTextStyles.labelLarge,
                                   ),
                                   value: _isVerifiedOrganizer,
@@ -416,8 +417,8 @@ class _AuthFormState extends State<AuthForm> {
                                   },
                                 ),
                                 SwitchListTile(
-                                  title: const Text(
-                                    "I am an Admin",
+                                  title: Text(
+                                    AppLocalizations.get('is_admin'),
                                     style: AppTextStyles.labelLarge,
                                   ),
                                   value: _isAdmin,
@@ -445,15 +446,15 @@ class _AuthFormState extends State<AuthForm> {
                               children: [
                                 TextFormField(
                                   controller: _companyNameController,
-                                  decoration: const InputDecoration(
-                                    hintText: "Company Name",
-                                    prefixIcon: Icon(Icons.business),
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.get('company_name'),
+                                    prefixIcon: const Icon(Icons.business),
                                   ),
                                   validator: (value) {
                                     if (_isVerifiedOrganizer &&
                                         (value == null ||
                                             value.trim().isEmpty)) {
-                                      return "Company name is required";
+                                      return AppLocalizations.get('company_name_required');
                                     }
                                     return null;
                                   },
@@ -461,15 +462,15 @@ class _AuthFormState extends State<AuthForm> {
                                 const SizedBox(height: AppSpacing.md),
                                 TextFormField(
                                   controller: _cifController,
-                                  decoration: const InputDecoration(
-                                    hintText: "VAT Number",
-                                    prefixIcon: Icon(Icons.badge),
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.get('vat_number'),
+                                    prefixIcon: const Icon(Icons.badge),
                                   ),
                                   validator: (value) {
                                     if (_isVerifiedOrganizer &&
                                         (value == null ||
                                             value.trim().isEmpty)) {
-                                      return "VAT number is required";
+                                      return AppLocalizations.get('vat_number_required');
                                     }
                                     return null;
                                   },
@@ -483,9 +484,9 @@ class _AuthFormState extends State<AuthForm> {
                                 TextFormField(
                                   controller: _adminCodeController,
                                   obscureText: true,
-                                  decoration: const InputDecoration(
-                                    hintText: "Admin Code",
-                                    prefixIcon: Icon(
+                                  decoration: InputDecoration(
+                                    hintText: AppLocalizations.get('admin_code'),
+                                    prefixIcon: const Icon(
                                       Icons.admin_panel_settings,
                                     ),
                                   ),
@@ -501,7 +502,7 @@ class _AuthFormState extends State<AuthForm> {
                                     if (_isAdmin &&
                                         (value == null ||
                                             value.trim().isEmpty)) {
-                                      return "Admin code is required";
+                                      return AppLocalizations.get('admin_code_required');
                                     }
                                     if (_backendAdminCodeError != null) {
                                       return _backendAdminCodeError;
@@ -538,7 +539,7 @@ class _AuthFormState extends State<AuthForm> {
                               ),
                             )
                           : Text(
-                              widget.isLogin ? "Login" : "Register",
+                              widget.isLogin ? AppLocalizations.get('login_btn') : AppLocalizations.get('register_btn'),
                               style: AppTextStyles.button.copyWith(
                                 color: Colors.white,
                               ),
@@ -560,13 +561,13 @@ class _AuthFormState extends State<AuthForm> {
                           children: [
                             TextSpan(
                               text: widget.isLogin
-                                  ? "Don't have an account? "
-                                  : "Already have an account? ",
+                                  ? AppLocalizations.get('dont_have_account')
+                                  : AppLocalizations.get('already_have_account'),
                             ),
                             TextSpan(
                               text: widget.isLogin
-                                  ? "Register here"
-                                  : "Login here",
+                                  ? AppLocalizations.get('register_here')
+                                  : AppLocalizations.get('login_here'),
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.bold,

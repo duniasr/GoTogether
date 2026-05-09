@@ -6,6 +6,7 @@ import '../../../services/quedadas_service.dart';
 import 'category_filter.dart';
 import 'event_card.dart';
 import '../../../utils/translations.dart';
+import '../../../l10n/app_localizations.dart';
 import 'package:geolocator/geolocator.dart';
 
 class ExploreTab extends StatefulWidget {
@@ -80,7 +81,7 @@ class _ExploreTabState extends State<ExploreTab> {
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Text(
-                'Error loading plans: ${snapshot.error}',
+                '${AppLocalizations.get('error')} loading plans: ${snapshot.error}',
                 style: AppTextStyles.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -174,7 +175,7 @@ class _ExploreTabState extends State<ExploreTab> {
                   children: [
                     Text(
                       widget.selectedCategory == 'All'
-                          ? 'Upcoming Plans Near You'
+                          ? AppLocalizations.get('upcoming_plans')
                           : translateCategory(widget.selectedCategory),
                       style: AppTextStyles.headlineMedium.copyWith(
                         color: widget.selectedCategory == 'All'
@@ -186,7 +187,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     ),
                     if (!isLoading)
                       Text(
-                        '${filtered.length} plans',
+                        '${filtered.length} ${AppLocalizations.get('plans_count')}',
                         style: AppTextStyles.bodyMedium,
                       ),
                   ],
@@ -234,15 +235,15 @@ class _ExploreTabState extends State<ExploreTab> {
                                     await showDialog<bool>(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: const Text('Delete event'),
+                                        title: Text(AppLocalizations.get('delete_event_title')),
                                         content: Text(
-                                          'Are you sure you want to delete "${q.titulo}"?',
+                                          '${AppLocalizations.get('confirm_delete_event')} "${translateDynamic(q.titulo)}"?',
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(false),
-                                            child: const Text('Cancel'),
+                                            child: Text(AppLocalizations.get('cancel')),
                                           ),
                                           FilledButton(
                                             style: FilledButton.styleFrom(
@@ -250,7 +251,7 @@ class _ExploreTabState extends State<ExploreTab> {
                                             ),
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(true),
-                                            child: const Text('Delete'),
+                                            child: Text(AppLocalizations.get('delete_account')),
                                           ),
                                         ],
                                       ),
@@ -262,8 +263,8 @@ class _ExploreTabState extends State<ExploreTab> {
                                   await widget.service.eliminarQuedada(q.id);
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Event deleted.'),
+                                    SnackBar(
+                                      content: Text(AppLocalizations.get('event_deleted_msg')),
                                     ),
                                   );
                                 } catch (e) {
@@ -285,15 +286,15 @@ class _ExploreTabState extends State<ExploreTab> {
                                           await showDialog<bool>(
                                             context: context,
                                             builder: (ctx) => AlertDialog(
-                                              title: const Text('Leave event'),
+                                              title: Text(AppLocalizations.get('leave_event')),
                                               content: Text(
-                                                'Are you sure you want to leave "${q.titulo}"?',
+                                                '${AppLocalizations.get('confirm_leave_event')} "${translateDynamic(q.titulo)}"?',
                                               ),
                                               actions: [
                                                 TextButton(
                                                   onPressed: () =>
                                                       Navigator.of(ctx).pop(false),
-                                                  child: const Text('Cancel'),
+                                                  child: Text(AppLocalizations.get('cancel')),
                                                 ),
                                                 FilledButton(
                                                   style: FilledButton.styleFrom(
@@ -301,7 +302,7 @@ class _ExploreTabState extends State<ExploreTab> {
                                                   ),
                                                   onPressed: () =>
                                                       Navigator.of(ctx).pop(true),
-                                                  child: const Text('Leave'),
+                                                  child: Text(AppLocalizations.get('leave')),
                                                 ),
                                               ],
                                             ),
@@ -313,14 +314,14 @@ class _ExploreTabState extends State<ExploreTab> {
                                       try {
                                         await widget.service.abandonarQuedada(q.id);
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('You have left the plan.')),
-                                        );
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(AppLocalizations.get('left_plan_msg'))),
+                                          );
                                       } catch (e) {
                                         if (!context.mounted) return;
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Error leaving: $e')),
-                                        );
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('${AppLocalizations.get('error')}: $e')),
+                                          );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
@@ -332,7 +333,7 @@ class _ExploreTabState extends State<ExploreTab> {
                                       ),
                                     ),
                                     child: Text(
-                                      'Leave',
+                                      AppLocalizations.get('leave'),
                                       style: AppTextStyles.button.copyWith(color: AppColors.error),
                                     ),
                                   ))
@@ -346,25 +347,13 @@ class _ExploreTabState extends State<ExploreTab> {
                                             q.id,
                                           );
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                'You have joined the plan!',
-                                              ),
-                                            ),
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text(AppLocalizations.get('joined_plan_msg'))),
                                           );
                                         } catch (e) {
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Error joining: $e',
-                                              ),
-                                            ),
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('${AppLocalizations.get('error')}: $e')),
                                           );
                                         }
                                       }
@@ -385,10 +374,10 @@ class _ExploreTabState extends State<ExploreTab> {
                                 ),
                                 child: Text(
                                   (q.plazasLibres > 0 && q.estado == 'abierta')
-                                      ? 'Join'
+                                      ? AppLocalizations.get('join_btn')
                                       : (q.estado == 'cerrada'
-                                            ? 'Closed'
-                                            : 'Full'),
+                                            ? AppLocalizations.get('closed_btn')
+                                            : AppLocalizations.get('full_btn')),
                                   style: AppTextStyles.button.copyWith(
                                     color: Colors.white,
                                   ),
@@ -453,7 +442,7 @@ class _ExploreTabState extends State<ExploreTab> {
           });
         },
         decoration: InputDecoration(
-          hintText: 'Search plan by name...',
+          hintText: AppLocalizations.get('search_plans'),
           hintStyle: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textHint,
           ),
@@ -515,7 +504,7 @@ class _ExploreTabState extends State<ExploreTab> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            isSearching ? 'No plans found' : 'No plans in this category',
+            isSearching ? AppLocalizations.get('no_plans_found') : AppLocalizations.get('no_plans_category'),
             style: AppTextStyles.headlineSmall.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -524,8 +513,8 @@ class _ExploreTabState extends State<ExploreTab> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             isSearching
-                ? 'Try a different search term.'
-                : 'Be the first to create one.',
+                ? AppLocalizations.get('try_different_search')
+                : AppLocalizations.get('be_first_create'),
             style: AppTextStyles.bodyMedium,
             textAlign: TextAlign.center,
           ),
