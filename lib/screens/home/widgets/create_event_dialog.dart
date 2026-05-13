@@ -12,6 +12,7 @@ import '../../../services/quedadas_service.dart';
 import '../../../utils/translations.dart';
 import '../../../widgets/date_time_picker.dart';
 import '../../../utils/bad_words_es.dart';
+import '../../../utils/bad_words_de.dart';
 import 'location_picker_screen.dart';
 import '../../../l10n/app_localizations.dart';
 Future<void> showCreateEventDialog(
@@ -158,7 +159,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
 
     final textoCompleto = '${_tituloCtrl.text} ${_descripcionCtrl.text}'.toLowerCase();
     
-    final filter = ProfanityFilter.filterAdditionally(badWordsEs);
+    final filter = ProfanityFilter.filterAdditionally([...badWordsEs, ...badWordsDe]);
     final hasProfanity = filter.hasProfanity(textoCompleto);
     
     if (hasProfanity) {
