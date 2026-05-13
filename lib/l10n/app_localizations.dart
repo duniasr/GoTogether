@@ -215,6 +215,11 @@ class AppLocalizations {
       'pick_location': 'Seleccionar ubicación',
       'selected_location': 'Ubicación seleccionada',
       'confirm_location': 'Confirmar ubicación',
+      'terms_accepted': 'He leído y acepto los ',
+      'terms_conditions': 'términos y condiciones',
+      'accept_terms_required': 'Debes aceptar los términos y condiciones',
+      'terms_title': 'Términos y Condiciones',
+      'terms_content': 'GoTogether actúa únicamente como plataforma intermediaria para poner en contacto a personas con intereses similares. No nos hacemos responsables bajo ninguna circunstancia de los actos vandálicos, peleas, accidentes, conductas inapropiadas, daños a la propiedad, lesiones o cualquier otro incidente causado por individuos o terceros durante el desarrollo de las quedadas. Cada usuario es completamente responsable de sus actos, de su propia seguridad y de cumplir con las leyes aplicables durante su participación en cualquier evento.',
     },
     'en': {
       'language': 'Language',
@@ -399,6 +404,11 @@ class AppLocalizations {
       'pick_location': 'Pick Location',
       'selected_location': 'Selected Location',
       'confirm_location': 'Confirm Location',
+      'terms_accepted': 'I have read and accept the ',
+      'terms_conditions': 'terms and conditions',
+      'accept_terms_required': 'You must accept the terms and conditions',
+      'terms_title': 'Terms and Conditions',
+      'terms_content': 'GoTogether acts solely as an intermediary platform to connect people with similar interests. We are not responsible under any circumstances for vandalism, fights, accidents, inappropriate behavior, property damage, injuries, or any other incidents caused by individuals or third parties during the meetups. Each user is fully responsible for their own actions, their own safety, and for complying with applicable laws during their participation in any event.',
     },
     'de': {
       'language': 'Sprache',
@@ -583,6 +593,11 @@ class AppLocalizations {
       'pick_location': 'Standort wählen',
       'selected_location': 'Ausgewählter Standort',
       'confirm_location': 'Standort bestätigen',
+      'terms_accepted': 'Ich habe die ',
+      'terms_conditions': 'Allgemeinen Geschäftsbedingungen gelesen und akzeptiere sie',
+      'accept_terms_required': 'Sie müssen die Allgemeinen Geschäftsbedingungen akzeptieren',
+      'terms_title': 'Allgemeine Geschäftsbedingungen',
+      'terms_content': 'GoTogether fungiert ausschließlich als Vermittlungsplattform, um Personen mit ähnlichen Interessen zusammenzubringen. Wir übernehmen unter keinen Umständen die Verantwortung für Vandalismus, Schlägereien, Unfälle, unangemessenes Verhalten, Sachschäden, Verletzungen oder andere Vorfälle, die durch Einzelpersonen oder Dritte während der Treffen verursacht werden. Jeder Benutzer ist in vollem Umfang für seine eigenen Handlungen, seine eigene Sicherheit und die Einhaltung der geltenden Gesetze während seiner Teilnahme an einer Veranstaltung verantwortlich.',
     }
   };
 }

@@ -34,6 +34,7 @@ class _AuthFormState extends State<AuthForm> {
 
   bool _isVerifiedOrganizer = false;
   bool _isAdmin = false;
+  bool _acceptedTerms = false;
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -59,6 +60,7 @@ class _AuthFormState extends State<AuthForm> {
       _backendAdminCodeError = null;
       _isVerifiedOrganizer = false;
       _isAdmin = false;
+      _acceptedTerms = false;
       _obscurePassword = true;
       _obscureConfirmPassword = true;
     }
@@ -86,6 +88,22 @@ class _AuthFormState extends State<AuthForm> {
         ),
       );
     }
+  }
+
+  void _showTermsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocalizations.get('terms_title')),
+        content: Text(AppLocalizations.get('terms_content')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(AppLocalizations.get('close')),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _isValidEmail(String email) {
@@ -138,6 +156,8 @@ class _AuthFormState extends State<AuthForm> {
           'puntos': 0,
           'fechaRegistro': DateTime.now(),
           'rol': _isAdmin ? 'admin' : 'user',
+          'terminosAceptados': true,
+          'fechaAceptacionTerminos': FieldValue.serverTimestamp(),
         };
 
         if (_isAdmin) {
@@ -517,6 +537,71 @@ class _AuthFormState extends State<AuthForm> {
                       ),
 
                     const SizedBox(height: AppSpacing.md),
+
+                    if (!widget.isLogin)
+                      FormField<bool>(
+                        validator: (value) {
+                          if (!_acceptedTerms) {
+                            return AppLocalizations.get('accept_terms_required');
+                          }
+                          return null;
+                        },
+                        builder: (state) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _acceptedTerms,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _acceptedTerms = val ?? false;
+                                      });
+                                      state.didChange(val);
+                                    },
+                                    activeColor: AppColors.primary,
+                                  ),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => _showTermsDialog(context),
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: AppTextStyles.bodyMedium,
+                                          children: [
+                                            TextSpan(
+                                              text: AppLocalizations.get('terms_accepted'),
+                                            ),
+                                            TextSpan(
+                                              text: AppLocalizations.get('terms_conditions'),
+                                              style: const TextStyle(
+                                                color: AppColors.primary,
+                                                fontWeight: FontWeight.bold,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (state.hasError)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12, top: 4),
+                                  child: Text(
+                                    state.errorText!,
+                                    style: TextStyle(color: AppColors.error, fontSize: 12),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+
+                    if (!widget.isLogin)
+                      const SizedBox(height: AppSpacing.md),
 
                     ElevatedButton(
                       onPressed: _isLoading ? null : _submit,
