@@ -421,6 +421,28 @@ class _ExploreTabState extends State<ExploreTab> {
             'GoTogether',
             style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
           ),
+          const Spacer(),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language_outlined, color: Colors.white),
+            tooltip: AppLocalizations.get('language') ?? 'Idioma',
+            onSelected: (String code) {
+              AppLocalizations.changeLanguage(Locale(code));
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'es',
+                child: Text('Español'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'en',
+                child: Text('English'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'de',
+                child: Text('Deutsch'),
+              ),
+            ],
+          ),
         ],
       ),
     );

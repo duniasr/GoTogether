@@ -640,6 +640,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildLanguageOption(String code, String label) {
+    final isSelected = AppLocalizations.localeNotifier.value.languageCode == code;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => AppLocalizations.changeLanguage(Locale(code)),
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.transparent,
+              width: 1.5,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textPrimary,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final content = SingleChildScrollView(
@@ -736,28 +774,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: AppSpacing.xl),
           
           AppCard(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     const Icon(Icons.language, color: AppColors.primary),
                     const SizedBox(width: AppSpacing.md),
-                    Text(AppLocalizations.get('language'), style: AppTextStyles.bodyLarge),
+                    Text(
+                      AppLocalizations.get('language'), 
+                      style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.normal)
+                    ),
                   ],
                 ),
-                DropdownButton<String>(
-                  value: AppLocalizations.localeNotifier.value.languageCode,
-                  underline: const SizedBox(),
-                  items: [
-                    DropdownMenuItem(value: 'es', child: Text(AppLocalizations.get('spanish'))),
-                    DropdownMenuItem(value: 'en', child: Text(AppLocalizations.get('english'))),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildLanguageOption('es', AppLocalizations.get('spanish')),
+                    _buildLanguageOption('en', AppLocalizations.get('english')),
+                    _buildLanguageOption('de', AppLocalizations.get('german')),
                   ],
-                  onChanged: (String? val) {
-                    if (val != null) {
-                      AppLocalizations.changeLanguage(Locale(val));
-                    }
-                  },
                 ),
               ],
             ),

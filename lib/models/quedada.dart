@@ -18,6 +18,7 @@ class Quedada {
     required this.ubicacion,
     required this.fechaInicio,
     required this.fechaFin,
+    required this.idioma,
   });
 
   final String id;
@@ -35,6 +36,7 @@ class Quedada {
   final GeoPoint ubicacion;
   final DateTime fechaInicio;
   final DateTime fechaFin;
+  final String idioma;
 
   // Método de fábrica para construir una Quedada a partir del JSON de Firestore
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -67,6 +69,7 @@ class Quedada {
       fechaFin: fechaFinRaw is Timestamp
           ? fechaFinRaw.toDate()
           : DateTime.now().add(const Duration(hours: 2)),
+      idioma: data['idioma'] as String? ?? 'Any',
     );
   }
 
@@ -86,6 +89,7 @@ class Quedada {
       'ubicacion': ubicacion,
       'fechaInicio': Timestamp.fromDate(fechaInicio),
       'fechaFin': Timestamp.fromDate(fechaFin),
+      'idioma': idioma,
     };
   }
 }

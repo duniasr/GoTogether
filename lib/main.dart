@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -16,6 +18,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().init();
   await AppLocalizations.init();
+  await initializeDateFormatting();
   runApp(const MyApp());
 }
 
@@ -33,6 +36,16 @@ class MyApp extends StatelessWidget {
           theme: AppTheme.theme,
           debugShowCheckedModeBanner: false,
           locale: locale,
+          supportedLocales: const [
+            Locale('es', ''),
+            Locale('en', ''),
+            Locale('de', ''),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           routes: {
             '/profile': (context) => const ProfileScreen(),
           },

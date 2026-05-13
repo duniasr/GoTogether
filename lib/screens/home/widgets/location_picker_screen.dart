@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../app_theme.dart';
+import '../../../l10n/app_localizations.dart';
 
 class LocationPickerScreen extends StatefulWidget {
   final LatLng? initialLocation;
@@ -35,7 +36,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pick Location', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Text(
+          AppLocalizations.get('pick_location'), 
+          style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 18)
+        ),
         backgroundColor: AppColors.background,
         elevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
@@ -53,7 +57,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
               Marker(
                 markerId: const MarkerId('selected_location'),
                 position: _currentLocation,
-                infoWindow: const InfoWindow(title: 'Selected Location'),
+                infoWindow: InfoWindow(title: AppLocalizations.get('selected_location')),
               ),
             },
           ),
@@ -74,7 +78,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                 elevation: 4,
               ),
               child: Text(
-                'Confirm Location',
+                AppLocalizations.get('confirm_location'),
                 style: AppTextStyles.button.copyWith(color: Colors.white),
               ),
             ),

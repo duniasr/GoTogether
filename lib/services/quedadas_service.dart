@@ -56,6 +56,7 @@ class QuedadasService {
     required bool esVerificado,
     required DateTime fechaInicio,
     required DateTime fechaFin,
+    required String idioma,
   }) async {
     final usuario = _auth.currentUser;
     String organizadorFinal = organizador.trim();
@@ -111,6 +112,7 @@ class QuedadasService {
       ubicacion: GeoPoint(latitud, longitud),
       fechaInicio: fechaInicio,
       fechaFin: fechaFin,
+      idioma: idioma,
     );
 
     await _eventsRef.add(evento.toFirestore());
@@ -177,6 +179,7 @@ class QuedadasService {
     DateTime? fechaFin,
     double? latitud,
     double? longitud,
+    String? idioma,
   }) async {
     int? nuevasPlazasLibres;
     final doc = await _eventsRef.doc(eventoId).get();
@@ -208,6 +211,7 @@ class QuedadasService {
       'estado': estado,
       if (nuevasPlazasLibres != null) 'plazasLibres': nuevasPlazasLibres,
       if (latitud != null && longitud != null) 'ubicacion': GeoPoint(latitud, longitud),
+      if (idioma != null) 'idioma': idioma,
       'fechaInicio': fechaInicio != null
           ? Timestamp.fromDate(fechaInicio)
           : FieldValue.delete(),

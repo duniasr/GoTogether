@@ -63,7 +63,7 @@ class _MapScreenState extends State<MapScreen> {
     );
 
     final markerData = await _createCustomPinWithText(
-      translateDynamic(q.titulo),
+      await translateDynamicAsync(q.titulo),
       q.esVerificado
           ? const Color(0xFFF59E0B)
           : const Color(0xFF1C63A6), // Naranja y Azul premium

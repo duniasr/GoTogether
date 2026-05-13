@@ -418,6 +418,7 @@ class _EditDialogState extends State<_EditDialog> {
 
   late String _tematica;
   late String _estado;
+  late String _idioma;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
   bool _guardando = false;
@@ -496,6 +497,7 @@ class _EditDialogState extends State<_EditDialog> {
     _cupo = TextEditingController(text: q.cupoMax.toString());
     _tematica = _tematicas.contains(q.tematica) ? q.tematica : _tematicas.first;
     _estado = _estados.contains(q.estado) ? q.estado : _estados.first;
+    _idioma = ['Any', 'es', 'en', 'de'].contains(q.idioma) ? q.idioma : 'Any';
     _fechaInicio = q.fechaInicio;
     _fechaFin = q.fechaFin;
 
@@ -581,6 +583,7 @@ class _EditDialogState extends State<_EditDialog> {
         fechaFin: _fechaFin,
         latitud: lat,
         longitud: lon,
+        idioma: _idioma,
       );
       if (!mounted) return;
       Navigator.pop(context);
@@ -651,6 +654,22 @@ class _EditDialogState extends State<_EditDialog> {
                     .toList(),
                 onChanged: (v) {
                   if (v != null) setState(() => _tematica = v);
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<String>(
+                value: _idioma,
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.get('language') ?? 'Idioma',
+                ),
+                items: ['Any', 'es', 'en', 'de']
+                    .map((t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t == 'Any' ? AppLocalizations.get('all') : (t == 'es' ? 'Español' : (t == 'en' ? 'English' : 'Deutsch'))),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _idioma = v);
                 },
               ),
               const SizedBox(height: AppSpacing.md),

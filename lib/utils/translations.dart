@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:translator/translator.dart';
 import '../l10n/app_localizations.dart';
 
 String translateCategory(String cat) {
@@ -35,32 +37,112 @@ String translateStatus(String status) {
   return AppLocalizations.get(key);
 }
 
-// Helper to mock translation for dynamic content (titles/descriptions)
+final GoogleTranslator _translator = GoogleTranslator();
+final Map<String, String> _translationCache = {};
+
+String _capitalizeFirstLetter(String text) {
+  if (text.isEmpty) return text;
+  return text[0].toUpperCase() + text.substring(1);
+}
+
+Future<String> translateDynamicAsync(String text) async {
+  final lang = AppLocalizations.localeNotifier.value.languageCode;
+  if (text.trim().isEmpty) return text;
+  
+  final cacheKey = '${lang}_$text';
+  if (_translationCache.containsKey(cacheKey)) {
+    return _translationCache[cacheKey]!;
+  }
+  
+  try {
+    final translation = await _translator.translate(text, to: lang);
+    final result = _capitalizeFirstLetter(translation.text);
+    _translationCache[cacheKey] = result;
+    return result;
+  } catch (e) {
+    return text;
+  }
+}
+
 String translateDynamic(String text) {
   final lang = AppLocalizations.localeNotifier.value.languageCode;
-  if (lang == 'es') return text;
+  if (text.trim().isEmpty) return text;
   
-  // Very basic mock translation for demonstration
-  final mocks = {
-    'Partido de Fútbol': 'Football Match',
-    'Senderismo por el Teide': 'Hiking through Teide',
-    'Estudiar para el examen': 'Study for the exam',
-    'Cena en el centro': 'Dinner downtown',
-    'Visita al museo': 'Museum visit',
-    'Fiesta de disfraces': 'Costume party',
-    'Limpieza de playa': 'Beach cleanup',
-    'Viaje a la nieve': 'Trip to the snow',
-    'Torneo de Valorant': 'Valorant tournament',
-    'Concierto de Rock': 'Rock concert',
-    'Charla sobre IA': 'Talk about AI',
-    'Intercambio de idiomas': 'Language exchange',
-    'Tarde de juegos de mesa': 'Board games afternoon',
-    'Clase de Yoga': 'Yoga Class',
-    'Taller de cocina': 'Cooking Workshop',
-    'Salida en bici': 'Bike ride',
-    'Barbacoa en el campo': 'Country BBQ',
-    'Ruta de tapas': 'Tapas route',
-  };
+  final cacheKey = '${lang}_$text';
+  if (_translationCache.containsKey(cacheKey)) {
+    return _translationCache[cacheKey]!;
+  }
   
-  return mocks[text] ?? text;
+  // Fire and forget, useful for dialogs when text is already fetching
+  translateDynamicAsync(text);
+  return text;
+}
+
+class TranslatedText extends StatefulWidget {
+  final String text;
+  final TextStyle? style;
+  final int? maxLines;
+  final TextOverflow? overflow;
+  final TextAlign? textAlign;
+
+  const TranslatedText(this.text, {super.key, this.style, this.maxLines, this.overflow, this.textAlign});
+
+  @override
+  State<TranslatedText> createState() => _TranslatedTextState();
+}
+
+class _TranslatedTextState extends State<TranslatedText> {
+  String _translatedText = '';
+  String _currentLang = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _translatedText = widget.text;
+    _currentLang = AppLocalizations.localeNotifier.value.languageCode;
+    _loadTranslation();
+    AppLocalizations.localeNotifier.addListener(_onLocaleChanged);
+  }
+
+  @override
+  void didUpdateWidget(TranslatedText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      _translatedText = widget.text;
+      _loadTranslation();
+    }
+  }
+
+  @override
+  void dispose() {
+    AppLocalizations.localeNotifier.removeListener(_onLocaleChanged);
+    super.dispose();
+  }
+
+  void _onLocaleChanged() {
+    if (_currentLang != AppLocalizations.localeNotifier.value.languageCode) {
+      _currentLang = AppLocalizations.localeNotifier.value.languageCode;
+      _loadTranslation();
+    }
+  }
+
+  Future<void> _loadTranslation() async {
+    final translated = await translateDynamicAsync(widget.text);
+    if (mounted) {
+      setState(() {
+        _translatedText = translated;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      _translatedText,
+      style: widget.style,
+      maxLines: widget.maxLines,
+      overflow: widget.overflow,
+      textAlign: widget.textAlign,
+    );
+  }
 }

@@ -59,6 +59,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   ];
 
   String _tematica = 'Deporte';
+  String _idioma = 'Any';
   bool _guardando = false;
   String? _errorMessage; 
   String? _successMessage;
@@ -231,6 +232,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
         esVerificado: isVerificado,
         fechaInicio: _fechaInicio!,
         fechaFin: _fechaFin!,
+        idioma: _idioma,
       );
 
       if (!mounted) return;
@@ -300,6 +302,24 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
                       },
               ),
               const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _idioma,
+                decoration: InputDecoration(
+                  labelText: '${AppLocalizations.get('language') ?? 'Idioma'} *',
+                  prefixIcon: const Icon(Icons.language_outlined),
+                ),
+                items: ['Any', 'es', 'en', 'de']
+                    .map((t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(t == 'Any' ? AppLocalizations.get('all') : (t == 'es' ? 'Español' : (t == 'en' ? 'English' : 'Deutsch'))),
+                        ))
+                    .toList(),
+                onChanged: _guardando
+                    ? null
+                    : (v) {
+                        if (v != null) setState(() => _idioma = v);
+                      },
+              ),
               const SizedBox(height: 12),
               
               Text('${AppLocalizations.get('event_schedule')} *', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),

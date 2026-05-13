@@ -88,8 +88,8 @@ class EventCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: Text(
-                        quedada.titulo.isEmpty ? AppLocalizations.get('no_title') : translateDynamic(quedada.titulo),
+                      child: TranslatedText(
+                        quedada.titulo.isEmpty ? AppLocalizations.get('no_title') : quedada.titulo,
                         style: AppTextStyles.headlineSmall,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -147,6 +147,27 @@ class EventCard extends StatelessWidget {
             runSpacing: 4,
             children: [
               CategoryChip(category: quedada.tematica),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.language_outlined, size: 12, color: Colors.blueAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      quedada.idioma == 'es' ? 'Español' : (quedada.idioma == 'en' ? 'English' : (quedada.idioma == 'de' ? 'Deutsch' : AppLocalizations.get('all'))),
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Builder(
                 builder: (context) {
                   final bool isOpen = quedada.estado == 'abierta' && spots > 0;
@@ -184,7 +205,7 @@ class EventCard extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  '${DateFormat('dd MMM yyyy, HH:mm').format(quedada.fechaInicio)} - ${DateFormat('HH:mm').format(quedada.fechaFin)}',
+                  '${DateFormat('dd MMM yyyy, HH:mm', AppLocalizations.localeNotifier.value.languageCode).format(quedada.fechaInicio)} - ${DateFormat('HH:mm').format(quedada.fechaFin)}',
                   style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -245,8 +266,8 @@ class EventCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
 
           if (quedada.descripcion.isNotEmpty)
-            Text(
-              translateDynamic(quedada.descripcion),
+            TranslatedText(
+              quedada.descripcion,
               style: AppTextStyles.bodyMedium,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,

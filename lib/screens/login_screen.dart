@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../l10n/app_localizations.dart';
 import 'login/widgets/auth_form.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,6 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 });
               },
             ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            right: 16,
+            child: const _LanguageSelector(),
           ),
         ],
       ),
@@ -107,4 +114,60 @@ class _LoginBackgroundPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _LanguageSelector extends StatelessWidget {
+  const _LanguageSelector();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<Locale>(
+      valueListenable: AppLocalizations.localeNotifier,
+      builder: (context, locale, child) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white.withOpacity(0.6), width: 1),
+              ),
+              child: DropdownButton<String>(
+                value: locale.languageCode,
+                underline: const SizedBox(),
+                dropdownColor: Colors.white.withOpacity(0.95),
+                icon: const Padding(
+                  padding: EdgeInsets.only(left: 8.0),
+                  child: Icon(Icons.language, color: AppColors.primaryDark, size: 20),
+                ),
+                style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold),
+            items: [
+              DropdownMenuItem(
+                value: 'es', 
+                child: Text(AppLocalizations.get('spanish'))
+              ),
+              DropdownMenuItem(
+                value: 'en', 
+                child: Text(AppLocalizations.get('english'))
+              ),
+              DropdownMenuItem(
+                value: 'de', 
+                child: Text(AppLocalizations.get('german'))
+              ),
+            ],
+            onChanged: (String? val) {
+              if (val != null) {
+                AppLocalizations.changeLanguage(Locale(val));
+              }
+            },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
