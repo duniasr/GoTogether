@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLocalizations {
-  static final ValueNotifier<Locale> localeNotifier = ValueNotifier(const Locale('es'));
+  static final ValueNotifier<Locale> localeNotifier = ValueNotifier(
+    const Locale('es'),
+  );
 
   static Future<void> init() async {
     try {
@@ -37,7 +39,7 @@ class AppLocalizations {
       'spanish': 'Español',
       'english': 'English',
       'german': 'Deutsch',
-      
+
       'explore': 'Explorar',
       'map': 'Mapa',
       'create': 'Crear',
@@ -53,9 +55,12 @@ class AppLocalizations {
       'save_changes': 'Guardar Cambios',
       'verification_request': 'Solicitud de verificación',
       'already_verified': 'Tu cuenta ya está verificada.',
-      'pending_review': 'Tu solicitud está pendiente de revisión por un administrador.',
-      'rejected_request': 'Tu solicitud fue rechazada. Puedes corregir los datos y reenviarla.',
-      'complete_details': 'Completa estos datos para solicitar la verificación como organizador.',
+      'pending_review':
+          'Tu solicitud está pendiente de revisión por un administrador.',
+      'rejected_request':
+          'Tu solicitud fue rechazada. Puedes corregir los datos y reenviarla.',
+      'complete_details':
+          'Completa estos datos para solicitar la verificación como organizador.',
       'company_name': 'Nombre de la empresa',
       'cif_nif': 'CIF / NIF',
       'send_request': 'Enviar solicitud',
@@ -70,7 +75,8 @@ class AppLocalizations {
       'update_password': 'Actualizar Contraseña',
       'log_out': 'Cerrar sesión',
       'delete_account': 'Eliminar cuenta',
-      'confirm_security': 'Por seguridad, introduce tu contraseña actual para confirmar.',
+      'confirm_security':
+          'Por seguridad, introduce tu contraseña actual para confirmar.',
       'tap_choose_avatar': 'Toca para elegir avatar',
       'choose_avatar': 'Elige tu Avatar',
       'cancel': 'Cancelar',
@@ -114,8 +120,10 @@ class AppLocalizations {
       'be_first_create': 'Sé el primero en crear uno.',
       'delete_event_title': 'Eliminar evento',
       'leave_event_title': 'Abandonar evento',
-      'confirm_delete_event': '¿Estás seguro de que quieres eliminar este evento?',
-      'confirm_leave_event': '¿Estás seguro de que quieres abandonar este evento?',
+      'confirm_delete_event':
+          '¿Estás seguro de que quieres eliminar este evento?',
+      'confirm_leave_event':
+          '¿Estás seguro de que quieres abandonar este evento?',
       'event_deleted_msg': 'Evento eliminado.',
       'left_plan_msg': 'Has abandonado el plan.',
       'joined_plan_msg': '¡Te has unido al plan!',
@@ -219,7 +227,8 @@ class AppLocalizations {
       'terms_conditions': 'términos y condiciones',
       'accept_terms_required': 'Debes aceptar los términos y condiciones',
       'terms_title': 'Términos y Condiciones',
-      'terms_content': 'GoTogether actúa únicamente como plataforma intermediaria para poner en contacto a personas con intereses similares. No nos hacemos responsables bajo ninguna circunstancia de los actos vandálicos, peleas, accidentes, conductas inapropiadas, daños a la propiedad, lesiones o cualquier otro incidente causado por individuos o terceros durante el desarrollo de las quedadas. Cada usuario es completamente responsable de sus actos, de su propia seguridad y de cumplir con las leyes aplicables durante su participación en cualquier evento.',
+      'terms_content':
+          'GoTogether actúa únicamente como plataforma intermediaria para poner en contacto a personas con intereses similares. No nos hacemos responsables bajo ninguna circunstancia de los actos vandálicos, peleas, accidentes, conductas inapropiadas, daños a la propiedad, lesiones o cualquier otro incidente causado por individuos o terceros durante el desarrollo de las quedadas. Cada usuario es completamente responsable de sus actos, de su propia seguridad y de cumplir con las leyes aplicables durante su participación en cualquier evento.',
     },
     'en': {
       'language': 'Language',
@@ -243,8 +252,10 @@ class AppLocalizations {
       'verification_request': 'Verification request',
       'already_verified': 'Your account is already verified.',
       'pending_review': 'Your request is pending review by an administrator.',
-      'rejected_request': 'Your request was rejected. You can correct the data and resend it.',
-      'complete_details': 'Complete these details to request verification as an organizer.',
+      'rejected_request':
+          'Your request was rejected. You can correct the data and resend it.',
+      'complete_details':
+          'Complete these details to request verification as an organizer.',
       'company_name': 'Company Name',
       'cif_nif': 'CIF / NIF',
       'send_request': 'Send request',
@@ -259,7 +270,8 @@ class AppLocalizations {
       'update_password': 'Update Password',
       'log_out': 'Log out',
       'delete_account': 'Delete account',
-      'confirm_security': 'For security, enter your current password to confirm.',
+      'confirm_security':
+          'For security, enter your current password to confirm.',
       'tap_choose_avatar': 'Tap to choose avatar',
       'choose_avatar': 'Choose your Avatar',
       'cancel': 'Cancel',
@@ -408,14 +420,15 @@ class AppLocalizations {
       'terms_conditions': 'terms and conditions',
       'accept_terms_required': 'You must accept the terms and conditions',
       'terms_title': 'Terms and Conditions',
-      'terms_content': 'GoTogether acts solely as an intermediary platform to connect people with similar interests. We are not responsible under any circumstances for vandalism, fights, accidents, inappropriate behavior, property damage, injuries, or any other incidents caused by individuals or third parties during the meetups. Each user is fully responsible for their own actions, their own safety, and for complying with applicable laws during their participation in any event.',
+      'terms_content':
+          'GoTogether acts solely as an intermediary platform to connect people with similar interests. We are not responsible under any circumstances for vandalism, fights, accidents, inappropriate behavior, property damage, injuries, or any other incidents caused by individuals or third parties during the meetups. Each user is fully responsible for their own actions, their own safety, and for complying with applicable laws during their participation in any event.',
     },
     'de': {
       'language': 'Sprache',
       'spanish': 'Español',
       'english': 'English',
       'german': 'Deutsch',
-      
+
       'explore': 'Entdecken',
       'map': 'Karte',
       'create': 'Erstellen',
@@ -432,8 +445,10 @@ class AppLocalizations {
       'verification_request': 'Verifizierungsanfrage',
       'already_verified': 'Ihr Konto ist bereits verifiziert.',
       'pending_review': 'Ihre Anfrage wird von einem Administrator geprüft.',
-      'rejected_request': 'Ihre Anfrage wurde abgelehnt. Sie können die Daten korrigieren und erneut senden.',
-      'complete_details': 'Vervollständigen Sie diese Details, um die Verifizierung als Organisator zu beantragen.',
+      'rejected_request':
+          'Ihre Anfrage wurde abgelehnt. Sie können die Daten korrigieren und erneut senden.',
+      'complete_details':
+          'Vervollständigen Sie diese Details, um die Verifizierung als Organisator zu beantragen.',
       'company_name': 'Firmenname',
       'cif_nif': 'Steuernummer (CIF / NIF)',
       'send_request': 'Anfrage senden',
@@ -448,7 +463,8 @@ class AppLocalizations {
       'update_password': 'Passwort aktualisieren',
       'log_out': 'Abmelden',
       'delete_account': 'Konto löschen',
-      'confirm_security': 'Geben Sie zur Sicherheit Ihr aktuelles Passwort ein.',
+      'confirm_security':
+          'Geben Sie zur Sicherheit Ihr aktuelles Passwort ein.',
       'tap_choose_avatar': 'Tippen, um Avatar zu wählen',
       'choose_avatar': 'Wählen Sie Ihren Avatar',
       'cancel': 'Abbrechen',
@@ -456,14 +472,16 @@ class AppLocalizations {
       'yes_sure': 'Ja, ich bin sicher',
       'yes_log_out': 'Ja, abmelden',
       'are_you_sure_logout': 'Sind Sie sicher, dass Sie sich abmelden möchten?',
-      'are_you_sure_delete': 'Sind Sie sicher? Diese Aktion ist unwiderruflich.',
+      'are_you_sure_delete':
+          'Sind Sie sicher? Diese Aktion ist unwiderruflich.',
       'error': 'Fehler',
       'required': 'Erforderlich',
       'invalid_email': 'Ungültige E-Mail',
       'min_6_chars': 'Mindestens 6 Zeichen',
       'passwords_not_match': 'Passwörter stimmen nicht überein',
       'profile_updated': 'Profil erfolgreich aktualisiert',
-      'check_new_email': 'Prüfen Sie Ihren neuen Posteingang zur Verifizierung.',
+      'check_new_email':
+          'Prüfen Sie Ihren neuen Posteingang zur Verifizierung.',
       'password_changed': 'Passwort erfolgreich geändert.',
       'request_sent': 'Anfrage erfolgreich gesendet.',
       'all': 'Alle',
@@ -492,8 +510,10 @@ class AppLocalizations {
       'be_first_create': 'Seien Sie der Erste, der einen erstellt.',
       'delete_event_title': 'Event löschen',
       'leave_event_title': 'Event verlassen',
-      'confirm_delete_event': 'Sind Sie sicher, dass Sie dieses Event löschen möchten?',
-      'confirm_leave_event': 'Sind Sie sicher, dass Sie dieses Event verlassen möchten?',
+      'confirm_delete_event':
+          'Sind Sie sicher, dass Sie dieses Event löschen möchten?',
+      'confirm_leave_event':
+          'Sind Sie sicher, dass Sie dieses Event verlassen möchten?',
       'event_deleted_msg': 'Event gelöscht.',
       'left_plan_msg': 'Sie haben den Plan verlassen.',
       'joined_plan_msg': 'Sie sind dem Plan beigetreten!',
@@ -545,9 +565,11 @@ class AppLocalizations {
       'review_fields': 'Bitte überprüfen Sie die hervorgehobenen Felder.',
       'select_dates': 'Bitte wählen Sie sowohl Start- als auch Enddatum aus.',
       'end_after_start': 'Das Enddatum muss nach dem Startdatum liegen.',
-      'start_not_past': 'Das Startdatum darf nicht in der Vergangenheit liegen.',
+      'start_not_past':
+          'Das Startdatum darf nicht in der Vergangenheit liegen.',
       'must_be_positive': 'Muss größer als 0 sein',
-      'location_not_found': 'Standort nicht gefunden. Versuchen Sie es über die Karte.',
+      'location_not_found':
+          'Standort nicht gefunden. Versuchen Sie es über die Karte.',
       'location_selected': 'Standort erfolgreich ausgewählt',
       'plan_updated': 'Plan erfolgreich aktualisiert',
       'update_btn': 'Aktualisieren',
@@ -556,7 +578,8 @@ class AppLocalizations {
       'welcome_back': 'Willkommen zurück!',
       'create_account': 'Konto erstellen',
       'sign_in_continue': 'Melden Sie sich an, um bei GoTogether fortzufahren',
-      'join_gotogether': 'Treten Sie GoTogether bei und finden Sie Ihren nächsten Plan',
+      'join_gotogether':
+          'Treten Sie GoTogether bei und finden Sie Ihren nächsten Plan',
       'your_name': 'Ihr Name',
       'name_required': 'Name ist erforderlich',
       'email': 'E-Mail',
@@ -575,7 +598,8 @@ class AppLocalizations {
       'admin_code': 'Admin-Code',
       'vat_number': 'Umsatzsteuer-Identifikationsnummer',
       'company_name_required': 'Firmenname ist erforderlich',
-      'vat_number_required': 'Umsatzsteuer-Identifikationsnummer ist erforderlich',
+      'vat_number_required':
+          'Umsatzsteuer-Identifikationsnummer ist erforderlich',
       'admin_code_required': 'Admin-Code ist erforderlich',
       'incorrect_admin_code': 'Falscher Admin-Code',
       'attendees_list': 'Teilnehmerliste',
@@ -594,10 +618,13 @@ class AppLocalizations {
       'selected_location': 'Ausgewählter Standort',
       'confirm_location': 'Standort bestätigen',
       'terms_accepted': 'Ich habe die ',
-      'terms_conditions': 'Allgemeinen Geschäftsbedingungen gelesen und akzeptiere sie',
-      'accept_terms_required': 'Sie müssen die Allgemeinen Geschäftsbedingungen akzeptieren',
+      'terms_conditions':
+          'Allgemeinen Geschäftsbedingungen gelesen und akzeptiere sie',
+      'accept_terms_required':
+          'Sie müssen die Allgemeinen Geschäftsbedingungen akzeptieren',
       'terms_title': 'Allgemeine Geschäftsbedingungen',
-      'terms_content': 'GoTogether fungiert ausschließlich als Vermittlungsplattform, um Personen mit ähnlichen Interessen zusammenzubringen. Wir übernehmen unter keinen Umständen die Verantwortung für Vandalismus, Schlägereien, Unfälle, unangemessenes Verhalten, Sachschäden, Verletzungen oder andere Vorfälle, die durch Einzelpersonen oder Dritte während der Treffen verursacht werden. Jeder Benutzer ist in vollem Umfang für seine eigenen Handlungen, seine eigene Sicherheit und die Einhaltung der geltenden Gesetze während seiner Teilnahme an einer Veranstaltung verantwortlich.',
-    }
+      'terms_content':
+          'GoTogether fungiert ausschließlich als Vermittlungsplattform, um Personen mit ähnlichen Interessen zusammenzubringen. Wir übernehmen unter keinen Umständen die Verantwortung für Vandalismus, Schlägereien, Unfälle, unangemessenes Verhalten, Sachschäden, Verletzungen oder andere Vorfälle, die durch Einzelpersonen oder Dritte während der Treffen verursacht werden. Jeder Benutzer ist in vollem Umfang für seine eigenen Handlungen, seine eigene Sicherheit und die Einhaltung der geltenden Gesetze während seiner Teilnahme an einer Veranstaltung verantwortlich.',
+    },
   };
 }

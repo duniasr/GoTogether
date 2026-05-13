@@ -100,9 +100,9 @@ class _ExploreTabState extends State<ExploreTab> {
                   .where(
                     (q) =>
                         q.tematica.toLowerCase() ==
-                        widget.selectedCategory.toLowerCase() ||
-                        translateCategory(q.tematica).toLowerCase() == 
-                        widget.selectedCategory.toLowerCase(),
+                            widget.selectedCategory.toLowerCase() ||
+                        translateCategory(q.tematica).toLowerCase() ==
+                            widget.selectedCategory.toLowerCase(),
                   )
                   .toList();
 
@@ -235,7 +235,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                     await showDialog<bool>(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
-                                        title: Text(AppLocalizations.get('delete_event_title')),
+                                        title: Text(
+                                          AppLocalizations.get(
+                                            'delete_event_title',
+                                          ),
+                                        ),
                                         content: Text(
                                           '${AppLocalizations.get('confirm_delete_event')} "${translateDynamic(q.titulo)}"?',
                                         ),
@@ -243,7 +247,9 @@ class _ExploreTabState extends State<ExploreTab> {
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(false),
-                                            child: Text(AppLocalizations.get('cancel')),
+                                            child: Text(
+                                              AppLocalizations.get('cancel'),
+                                            ),
                                           ),
                                           FilledButton(
                                             style: FilledButton.styleFrom(
@@ -251,7 +257,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                             ),
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(true),
-                                            child: Text(AppLocalizations.get('delete_account')),
+                                            child: Text(
+                                              AppLocalizations.get(
+                                                'delete_account',
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -264,7 +274,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(AppLocalizations.get('event_deleted_msg')),
+                                      content: Text(
+                                        AppLocalizations.get(
+                                          'event_deleted_msg',
+                                        ),
+                                      ),
                                     ),
                                   );
                                 } catch (e) {
@@ -279,64 +293,105 @@ class _ExploreTabState extends State<ExploreTab> {
                             : null,
                         actionButton: isJoined
                             ? (isOrganizer
-                                ? null
-                                : ElevatedButton(
-                                    onPressed: () async {
-                                      final confirmar =
-                                          await showDialog<bool>(
-                                            context: context,
-                                            builder: (ctx) => AlertDialog(
-                                              title: Text(AppLocalizations.get('leave_event')),
-                                              content: Text(
-                                                '${AppLocalizations.get('confirm_leave_event')} "${translateDynamic(q.titulo)}"?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.of(ctx).pop(false),
-                                                  child: Text(AppLocalizations.get('cancel')),
-                                                ),
-                                                FilledButton(
-                                                  style: FilledButton.styleFrom(
-                                                    backgroundColor: AppColors.error,
+                                  ? null
+                                  : ElevatedButton(
+                                      onPressed: () async {
+                                        final confirmar =
+                                            await showDialog<bool>(
+                                              context: context,
+                                              builder: (ctx) => AlertDialog(
+                                                title: Text(
+                                                  AppLocalizations.get(
+                                                    'leave_event',
                                                   ),
-                                                  onPressed: () =>
-                                                      Navigator.of(ctx).pop(true),
-                                                  child: Text(AppLocalizations.get('leave')),
                                                 ),
-                                              ],
+                                                content: Text(
+                                                  '${AppLocalizations.get('confirm_leave_event')} "${translateDynamic(q.titulo)}"?',
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(false),
+                                                    child: Text(
+                                                      AppLocalizations.get(
+                                                        'cancel',
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  FilledButton(
+                                                    style:
+                                                        FilledButton.styleFrom(
+                                                          backgroundColor:
+                                                              AppColors.error,
+                                                        ),
+                                                    onPressed: () =>
+                                                        Navigator.of(
+                                                          ctx,
+                                                        ).pop(true),
+                                                    child: Text(
+                                                      AppLocalizations.get(
+                                                        'leave',
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ) ??
+                                            false;
+
+                                        if (!confirmar) return;
+
+                                        try {
+                                          await widget.service.abandonarQuedada(
+                                            q.id,
+                                          );
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.get(
+                                                  'left_plan_msg',
+                                                ),
+                                              ),
                                             ),
-                                          ) ??
-                                          false;
-
-                                      if (!confirmar) return;
-
-                                      try {
-                                        await widget.service.abandonarQuedada(q.id);
-                                        if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text(AppLocalizations.get('left_plan_msg'))),
                                           );
-                                      } catch (e) {
-                                        if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('${AppLocalizations.get('error')}: $e')),
+                                        } catch (e) {
+                                          if (!context.mounted) return;
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${AppLocalizations.get('error')}: $e',
+                                              ),
+                                            ),
                                           );
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.error.withOpacity(0.1),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(AppRadius.md),
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.error
+                                            .withOpacity(0.1),
+                                        elevation: 0,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.md,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    child: Text(
-                                      AppLocalizations.get('leave'),
-                                      style: AppTextStyles.button.copyWith(color: AppColors.error),
-                                    ),
-                                  ))
+                                      child: Text(
+                                        AppLocalizations.get('leave'),
+                                        style: AppTextStyles.button.copyWith(
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ))
                             : ElevatedButton(
                                 onPressed:
                                     (q.plazasLibres > 0 &&
@@ -347,13 +402,27 @@ class _ExploreTabState extends State<ExploreTab> {
                                             q.id,
                                           );
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text(AppLocalizations.get('joined_plan_msg'))),
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                AppLocalizations.get(
+                                                  'joined_plan_msg',
+                                                ),
+                                              ),
+                                            ),
                                           );
                                         } catch (e) {
                                           if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('${AppLocalizations.get('error')}: $e')),
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '${AppLocalizations.get('error')}: $e',
+                                              ),
+                                            ),
                                           );
                                         }
                                       }
@@ -504,7 +573,9 @@ class _ExploreTabState extends State<ExploreTab> {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            isSearching ? AppLocalizations.get('no_plans_found') : AppLocalizations.get('no_plans_category'),
+            isSearching
+                ? AppLocalizations.get('no_plans_found')
+                : AppLocalizations.get('no_plans_category'),
             style: AppTextStyles.headlineSmall.copyWith(
               color: AppColors.textSecondary,
             ),
