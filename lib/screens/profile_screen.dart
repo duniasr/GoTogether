@@ -45,6 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _photoUrl; 
   String _rol = 'usuario';
   String? _estadoVerificacion;
+  int _reputacion = 0;
   
   final List<String> _avataresDisponibles = [
     'assets/images/avatars/avatar1.jpeg',
@@ -104,6 +105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _cifController.text = data['cif'] ?? '';
           _rol = data['rol'] ?? 'usuario';
           _estadoVerificacion = data['estadoVerificacion'];
+          _reputacion = data['reputacion'] ?? 0;
         });
         _validateForm(); 
       }
@@ -730,6 +732,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
           AppCard(
             child: Column(
               children: [
+                Builder(builder: (context) {
+                  String nivel = 'Novato';
+                  Color color = Colors.grey;
+                  if (_reputacion >= 7) { nivel = 'Experto'; color = Colors.purple; }
+                  else if (_reputacion >= 3) { nivel = 'Avanzado'; color = Colors.blue; }
+                  
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: color.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.star_rounded, color: color),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Nivel: $nivel',
+                              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '$_reputacion ${AppLocalizations.get('points') ?? "puntos"}',
+                          style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 TextField(
                   controller: _nameController,
                   decoration: InputDecoration(labelText: AppLocalizations.get('full_name')),
