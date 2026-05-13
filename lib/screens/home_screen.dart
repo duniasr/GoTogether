@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../app_theme.dart';
 import '../services/quedadas_service.dart';
 import 'profile_screen.dart';
-import 'map_screen.dart'; 
+import 'map_screen.dart';
 import 'mis_planes_screen.dart';
 import 'home/widgets/explore_tab.dart';
 import 'home/widgets/create_event_dialog.dart';
@@ -42,19 +42,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-       body: SafeArea(
+      body: SafeArea(
         child: _currentIndex == 0
             ? ExploreTab(
                 service: _service,
                 selectedCategory: _selectedCategory,
-                onCategorySelected: (cat) => setState(() => _selectedCategory = cat),
+                onCategorySelected: (cat) =>
+                    setState(() => _selectedCategory = cat),
                 categories: _categories,
               )
             : _currentIndex == 1
-                ? MapScreen()
-                : _currentIndex == 3
-                    ? MisPlanesScreen()
-                    : _buildPlaceholderTab(_currentIndex),
+            ? MapScreen()
+            : _currentIndex == 3
+            ? MisPlanesScreen()
+            : _buildPlaceholderTab(_currentIndex),
       ),
       floatingActionButton: Container(
         height: 64,
