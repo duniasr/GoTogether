@@ -215,6 +215,11 @@ class AppLocalizations {
       'pick_location': 'Seleccionar ubicación',
       'selected_location': 'Ubicación seleccionada',
       'confirm_location': 'Confirmar ubicación',
+      'modifications_title': '¡Cambios en tus planes!',
+      'modifications_desc': 'El organizador ha modificado {fields} en {count} de tus planes. ¡Revisa los detalles!',
+      'modified': 'Modificado',
+      'date': 'Fecha',
+      'view_in_my_plans': 'Ver en Mis Planes',
     },
     'en': {
       'language': 'Language',
@@ -399,6 +404,11 @@ class AppLocalizations {
       'pick_location': 'Pick Location',
       'selected_location': 'Selected Location',
       'confirm_location': 'Confirm Location',
+      'modifications_title': 'Changes in your plans!',
+      'modifications_desc': 'The organizer has modified {fields} in {count} of your plans. Check the details!',
+      'modified': 'Modified',
+      'date': 'Date',
+      'view_in_my_plans': 'View in My Plans',
     },
     'de': {
       'language': 'Sprache',
@@ -583,6 +593,11 @@ class AppLocalizations {
       'pick_location': 'Standort wählen',
       'selected_location': 'Ausgewählter Standort',
       'confirm_location': 'Standort bestätigen',
+      'modifications_title': 'Änderungen in deinen Plänen!',
+      'modifications_desc': 'Der Organisator hat {fields} in {count} deiner Pläne geändert. Überprüfe die Details!',
+      'modified': 'Geändert',
+      'date': 'Datum',
+      'view_in_my_plans': 'In Meine Pläne ansehen',
     }
   };
 }

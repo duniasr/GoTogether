@@ -14,7 +14,8 @@ import 'home/widgets/event_card.dart';
 import '../l10n/app_localizations.dart';
 
 class MisPlanesScreen extends StatefulWidget {
-  const MisPlanesScreen({super.key});
+  final int initialIndex;
+  const MisPlanesScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MisPlanesScreen> createState() => _MisPlanesScreenState();
@@ -36,6 +37,7 @@ class _MisPlanesScreenState extends State<MisPlanesScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
+      initialIndex: widget.initialIndex,
       length: 2, // Dos pestañas: "Creados" y "Unidos"
       child: Scaffold(
         backgroundColor: AppColors.background,

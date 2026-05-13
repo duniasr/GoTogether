@@ -8,6 +8,7 @@ import '../../../models/quedada.dart';
 import '../../../utils/translations.dart';
 import '../../../services/quedadas_service.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/aviso_modificacion.dart';
 import '../../map_screen.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -75,14 +76,65 @@ class EventCard extends StatelessWidget {
     final catColor =
         AppColors.categoryColors[quedada.tematica] ?? AppColors.textSecondary;
 
-    return AppCard(
-      leftBorderColor: catColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return StreamBuilder<AvisoModificacion?>(
+      stream: isJoined ? QuedadasService().escucharAvisoQuedada(quedada.id) : Stream.value(null),
+      builder: (context, snapshot) {
+        final aviso = snapshot.data;
+        final hasAviso = aviso != null && !aviso.leido;
+        final modifiedFields = hasAviso ? aviso.campos : <String>[];
+
+        return AppCard(
+          leftBorderColor: catColor,
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (hasAviso) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, size: 20, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.get('modified'),
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => QuedadasService().marcarAvisoLeido(quedada.id),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange,
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: Text(
+                            AppLocalizations.get('got_it'),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               Expanded(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -210,6 +262,11 @@ class EventCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (modifiedFields.contains('fecha'))
+                const Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -261,6 +318,11 @@ class EventCard extends StatelessWidget {
                   return const SizedBox.shrink();
                 },
               ),
+              if (modifiedFields.contains('ubicacion'))
+                const Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Icon(Icons.info_outline, size: 16, color: Colors.orange),
+                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -366,6 +428,8 @@ class EventCard extends StatelessWidget {
           // === FIN LÓGICA HU-11 ===
         ],
       ),
+    );
+      },
     );
   }
 
