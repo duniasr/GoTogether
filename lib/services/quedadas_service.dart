@@ -23,6 +23,7 @@ class QuedadasService {
     return _eventsRef.snapshots().map((snapshot) {
       final eventos = snapshot.docs
           .map(Quedada.fromFirestore)
+          .where((q) => q.contadorReportes < 4) // No mostrar eventos con muchos reportes
           .toList(growable: false);
 
       eventos.sort(
@@ -40,6 +41,7 @@ class QuedadasService {
         .map((snapshot) {
           return snapshot.docs
               .map(Quedada.fromFirestore)
+              .where((q) => q.contadorReportes < 4) // No mostrar eventos reportados
               .toList(growable: false);
         });
   }
@@ -282,5 +284,39 @@ class QuedadasService {
       'contadorReportes': FieldValue.increment(1),
     });
 
+  }
+
+  // --- MÉTODOS DE ADMINISTRADOR PARA REPORTES ---
+
+  Stream<List<Quedada>> escucharQuedadasReportadas() {
+    return _eventsRef
+        .where('contadorReportes', isGreaterThanOrEqualTo: 4)
+        .snapshots()
+        .map((snapshot) {
+          final eventos = snapshot.docs
+              .map(Quedada.fromFirestore)
+              .toList(growable: false);
+          
+          eventos.sort(
+            (a, b) => b.contadorReportes.compareTo(a.contadorReportes), // Ordenar por más reportes primero
+          );
+          return eventos;
+        });
+  }
+
+  Future<void> desestimarReportes(String eventoId) async {
+    // 1. Reiniciar contador a 0
+    await _eventsRef.doc(eventoId).update({
+      'contadorReportes': 0,
+    });
+
+    // 2. Eliminar las quejas individuales en la colección `reportes_quedadas`
+    final reportesRef = _firestore.collection('reportes_quedadas');
+    final query = await reportesRef.where('eventoId', isEqualTo: eventoId).get();
+    final batch = _firestore.batch();
+    for (var doc in query.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 }

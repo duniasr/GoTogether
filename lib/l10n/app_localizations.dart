@@ -215,6 +215,13 @@ class AppLocalizations {
       'pick_location': 'Seleccionar ubicación',
       'selected_location': 'Ubicación seleccionada',
       'confirm_location': 'Confirmar ubicación',
+      'admin_verifications_tab': 'Verificaciones',
+      'admin_reports_tab': 'Reportes',
+      'reported_events': 'Eventos Reportados',
+      'reports_count': 'Reportes',
+      'dismiss_reports': 'Desestimar',
+      'no_reported_events': 'No hay eventos reportados',
+      'dismissed_success': 'Reportes desestimados con éxito',
     },
     'en': {
       'language': 'Language',
@@ -399,6 +406,13 @@ class AppLocalizations {
       'pick_location': 'Pick Location',
       'selected_location': 'Selected Location',
       'confirm_location': 'Confirm Location',
+      'admin_verifications_tab': 'Verifications',
+      'admin_reports_tab': 'Reports',
+      'reported_events': 'Reported Events',
+      'reports_count': 'Reports',
+      'dismiss_reports': 'Dismiss',
+      'no_reported_events': 'No reported events',
+      'dismissed_success': 'Reports dismissed successfully',
     },
     'de': {
       'language': 'Sprache',
@@ -583,6 +597,13 @@ class AppLocalizations {
       'pick_location': 'Standort wählen',
       'selected_location': 'Ausgewählter Standort',
       'confirm_location': 'Standort bestätigen',
+      'admin_verifications_tab': 'Verifizierungen',
+      'admin_reports_tab': 'Meldungen',
+      'reported_events': 'Gemeldete Events',
+      'reports_count': 'Meldungen',
+      'dismiss_reports': 'Verwerfen',
+      'no_reported_events': 'Keine gemeldeten Events',
+      'dismissed_success': 'Meldungen erfolgreich verworfen',
     }
   };
 }
