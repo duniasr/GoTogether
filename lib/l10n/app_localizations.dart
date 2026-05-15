@@ -646,7 +646,6 @@ class AppLocalizations {
       'modified': 'Geändert',
       'date': 'Datum',
       'view_in_my_plans': 'In Meine Pläne ansehen',
-    }
       'admin_verifications_tab': 'Verifizierungen',
       'admin_reports_tab': 'Meldungen',
       'reported_events': 'Gemeldete Events',
