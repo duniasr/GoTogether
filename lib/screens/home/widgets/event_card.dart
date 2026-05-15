@@ -493,7 +493,23 @@ class EventCard extends StatelessWidget {
                         label: AppLocalizations.get('like') ?? 'Me gusta',
                         color: Colors.green,
                         isActive: quedada.valoracionesPositivas.contains(FirebaseAuth.instance.currentUser?.uid),
-                        onTap: () => QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, true),
+                        onTap: () async {
+                          try {
+                            await QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, true);
+                          } catch (e, st) {
+                            debugPrint('=== ERROR AL DAR LIKE ===');
+                            debugPrint('eventoId: ${quedada.id}');
+                            debugPrint('organizadorId: ${quedada.organizadorId}');
+                            debugPrint('error: $e');
+                            debugPrint('stack: $st');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Error like: $e'),
+                                duration: const Duration(seconds: 10),
+                              ));
+                            }
+                          }
+                        },
                       ),
                       _buildVoteButton(
                         icon: Icons.thumb_down_alt_outlined,
@@ -501,7 +517,23 @@ class EventCard extends StatelessWidget {
                         label: AppLocalizations.get('dislike') ?? 'No me gusta',
                         color: Colors.red,
                         isActive: quedada.valoracionesNegativas.contains(FirebaseAuth.instance.currentUser?.uid),
-                        onTap: () => QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, false),
+                        onTap: () async {
+                          try {
+                            await QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, false);
+                          } catch (e, st) {
+                            debugPrint('=== ERROR AL DAR DISLIKE ===');
+                            debugPrint('eventoId: ${quedada.id}');
+                            debugPrint('organizadorId: ${quedada.organizadorId}');
+                            debugPrint('error: $e');
+                            debugPrint('stack: $st');
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text('Error dislike: $e'),
+                                duration: const Duration(seconds: 10),
+                              ));
+                            }
+                          }
+                        },
                       ),
                     ],
                   ),

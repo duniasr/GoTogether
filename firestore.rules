@@ -23,7 +23,17 @@ service cloud.firestore {
     match /events/{eventId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
-      allow update, delete: if request.auth != null; // En una app real, aquí validarías que sea el organizador o admin
+      allow update, delete: if request.auth != null;
+
+      // Subcolección de valoraciones: cada usuario autenticado puede crear/borrar solo su propio voto
+      match /valoraciones/{userId} {
+        allow read: if request.auth != null;
+        allow write, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    match /avisos_modificaciones/{avisoId} {
+      allow read, write, delete: if request.auth != null;
     }
   }
 }
