@@ -285,10 +285,41 @@ class EventCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Expanded(
-                child: Text(
-                  quedada.organizador,
-                  style: AppTextStyles.labelSmall,
-                  overflow: TextOverflow.ellipsis,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        quedada.organizador,
+                        style: AppTextStyles.labelSmall,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    FutureBuilder<DocumentSnapshot>(
+                      future: FirebaseFirestore.instance.collection('users').doc(quedada.organizadorId).get(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox();
+                        final reputacion = (snapshot.data!.data() as Map<String, dynamic>?)?['reputacion'] ?? 0;
+                        String nivel = 'Novato';
+                        Color color = Colors.grey;
+                        if (reputacion >= 7) { nivel = 'Experto'; color = Colors.purple; }
+                        else if (reputacion >= 3) { nivel = 'Avanzado'; color = Colors.blue; }
+                        
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: color.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            nivel,
+                            style: AppTextStyles.labelSmall.copyWith(color: color, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               if (quedada.organizadorId == FirebaseAuth.instance.currentUser?.uid)
@@ -364,7 +395,106 @@ class EventCard extends StatelessWidget {
             ),
           ],
           // === FIN LÓGICA HU-11 ===
+
+          if (isJoined && quedada.organizadorId != FirebaseAuth.instance.currentUser?.uid && quedada.fechaFin.isBefore(DateTime.now())) ...[
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.withOpacity(0.05), Colors.purple.withOpacity(0.05)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: Colors.blue.withOpacity(0.2)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    '¡El evento ha finalizado!',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '¿Qué te ha parecido la organización?',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildVoteButton(
+                        icon: Icons.thumb_up_alt_outlined,
+                        activeIcon: Icons.thumb_up,
+                        label: AppLocalizations.get('like') ?? 'Me gusta',
+                        color: Colors.green,
+                        isActive: quedada.valoracionesPositivas.contains(FirebaseAuth.instance.currentUser?.uid),
+                        onTap: () => QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, true),
+                      ),
+                      _buildVoteButton(
+                        icon: Icons.thumb_down_alt_outlined,
+                        activeIcon: Icons.thumb_down,
+                        label: AppLocalizations.get('dislike') ?? 'No me gusta',
+                        color: Colors.red,
+                        isActive: quedada.valoracionesNegativas.contains(FirebaseAuth.instance.currentUser?.uid),
+                        onTap: () => QuedadasService().valorarOrganizador(quedada.id, quedada.organizadorId, false),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ] else if (quedada.organizadorId == FirebaseAuth.instance.currentUser?.uid && quedada.fechaFin.isBefore(DateTime.now())) ...[
+            const SizedBox(height: AppSpacing.md),
+            const Divider(height: 1),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.thumb_up, color: Colors.green, size: 16),
+                const SizedBox(width: 6),
+                Text('${quedada.valoracionesPositivas.length} Me gusta', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(width: 24),
+                const Icon(Icons.thumb_down, color: Colors.red, size: 16),
+                const SizedBox(width: 6),
+                Text('${quedada.valoracionesNegativas.length} No me gusta', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
+          ],
+          // === FIN VOTOS HU-14 ===
         ],
+      ),
+    );
+  }
+
+  Widget _buildVoteButton({
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    required Color color,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? color.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: isActive ? color : Colors.grey.withOpacity(0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(isActive ? activeIcon : icon, color: isActive ? color : AppColors.textSecondary, size: 20),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: isActive ? color : AppColors.textSecondary, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

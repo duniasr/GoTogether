@@ -23,6 +23,7 @@ class QuedadasService {
     return _eventsRef.snapshots().map((snapshot) {
       final eventos = snapshot.docs
           .map(Quedada.fromFirestore)
+          .where((q) => q.contadorReportes < 4) // No mostrar eventos con muchos reportes
           .toList(growable: false);
 
       eventos.sort(
@@ -40,6 +41,7 @@ class QuedadasService {
         .map((snapshot) {
           return snapshot.docs
               .map(Quedada.fromFirestore)
+              .where((q) => q.contadorReportes < 4) // No mostrar eventos reportados
               .toList(growable: false);
         });
   }
@@ -113,6 +115,8 @@ class QuedadasService {
       fechaInicio: fechaInicio,
       fechaFin: fechaFin,
       idioma: idioma,
+      valoracionesPositivas: const <String>[],
+      valoracionesNegativas: const <String>[],
     );
 
     await _eventsRef.add(evento.toFirestore());
@@ -282,5 +286,94 @@ class QuedadasService {
       'contadorReportes': FieldValue.increment(1),
     });
 
+  }
+
+  Future<void> valorarOrganizador(String eventoId, String organizadorId, bool esPositivo) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) throw Exception('User is not authenticated');
+
+    final doc = await _eventsRef.doc(eventoId).get();
+    if (!doc.exists) return;
+    
+    final quedada = Quedada.fromFirestore(doc);
+    
+    int incrementoReputacion = 0;
+    
+    bool estabaPositivo = quedada.valoracionesPositivas.contains(uid);
+    bool estabaNegativo = quedada.valoracionesNegativas.contains(uid);
+
+    if (esPositivo) {
+      if (estabaPositivo) {
+        // Quitar voto positivo
+        incrementoReputacion = -1;
+        await _eventsRef.doc(eventoId).update({
+          'valoracionesPositivas': FieldValue.arrayRemove([uid])
+        });
+      } else {
+        // Añadir voto positivo
+        incrementoReputacion = estabaNegativo ? 2 : 1; 
+        await _eventsRef.doc(eventoId).update({
+          'valoracionesPositivas': FieldValue.arrayUnion([uid]),
+          if (estabaNegativo) 'valoracionesNegativas': FieldValue.arrayRemove([uid])
+        });
+      }
+    } else {
+      if (estabaNegativo) {
+        // Quitar voto negativo
+        incrementoReputacion = 1;
+        await _eventsRef.doc(eventoId).update({
+          'valoracionesNegativas': FieldValue.arrayRemove([uid])
+        });
+      } else {
+        // Añadir voto negativo
+        incrementoReputacion = estabaPositivo ? -2 : -1;
+        await _eventsRef.doc(eventoId).update({
+          'valoracionesNegativas': FieldValue.arrayUnion([uid]),
+          if (estabaPositivo) 'valoracionesPositivas': FieldValue.arrayRemove([uid])
+        });
+      }
+    }
+
+    if (incrementoReputacion != 0) {
+      final userDoc = _firestore.collection('users').doc(organizadorId);
+      // Para asegurar que el campo reputacion se crea si no existía (ej. usuarios antiguos)
+      await userDoc.set({
+        'reputacion': FieldValue.increment(incrementoReputacion)
+      }, SetOptions(merge: true));
+    }
+  }
+
+  // --- MÉTODOS DE ADMINISTRADOR PARA REPORTES ---
+
+  Stream<List<Quedada>> escucharQuedadasReportadas() {
+    return _eventsRef
+        .where('contadorReportes', isGreaterThanOrEqualTo: 4)
+        .snapshots()
+        .map((snapshot) {
+          final eventos = snapshot.docs
+              .map(Quedada.fromFirestore)
+              .toList(growable: false);
+          
+          eventos.sort(
+            (a, b) => b.contadorReportes.compareTo(a.contadorReportes), // Ordenar por más reportes primero
+          );
+          return eventos;
+        });
+  }
+
+  Future<void> desestimarReportes(String eventoId) async {
+    // 1. Reiniciar contador a 0
+    await _eventsRef.doc(eventoId).update({
+      'contadorReportes': 0,
+    });
+
+    // 2. Eliminar las quejas individuales en la colección `reportes_quedadas`
+    final reportesRef = _firestore.collection('reportes_quedadas');
+    final query = await reportesRef.where('eventoId', isEqualTo: eventoId).get();
+    final batch = _firestore.batch();
+    for (var doc in query.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
   }
 }

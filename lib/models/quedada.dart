@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Quedada {
-  // Constructor de la clase
   const Quedada({
     required this.id,
     required this.asistentesID,
@@ -19,6 +18,8 @@ class Quedada {
     required this.fechaInicio,
     required this.fechaFin,
     required this.idioma,
+    required this.valoracionesPositivas,
+    required this.valoracionesNegativas,
   });
 
   final String id;
@@ -37,11 +38,15 @@ class Quedada {
   final DateTime fechaInicio;
   final DateTime fechaFin;
   final String idioma;
+  final List<String> valoracionesPositivas;
+  final List<String> valoracionesNegativas;
 
   // Método de fábrica para construir una Quedada a partir del JSON de Firestore
   factory Quedada.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? <String, dynamic>{};
     final asistentesRaw = data['asistentesID'];
+    final positivasRaw = data['valoracionesPositivas'];
+    final negativasRaw = data['valoracionesNegativas'];
     
     // Control de errores básicos por si la base de datos devuelve valores nulos
     final fechaInicioRaw = data['fechaInicio'];
@@ -70,6 +75,12 @@ class Quedada {
           ? fechaFinRaw.toDate()
           : DateTime.now().add(const Duration(hours: 2)),
       idioma: data['idioma'] as String? ?? 'Any',
+      valoracionesPositivas: positivasRaw is Iterable
+          ? positivasRaw.map((item) => item.toString()).toList(growable: false)
+          : const <String>[],
+      valoracionesNegativas: negativasRaw is Iterable
+          ? negativasRaw.map((item) => item.toString()).toList(growable: false)
+          : const <String>[],
     );
   }
 
@@ -90,6 +101,8 @@ class Quedada {
       'fechaInicio': Timestamp.fromDate(fechaInicio),
       'fechaFin': Timestamp.fromDate(fechaFin),
       'idioma': idioma,
+      'valoracionesPositivas': valoracionesPositivas,
+      'valoracionesNegativas': valoracionesNegativas,
     };
   }
 }
