@@ -14,6 +14,8 @@ class ExploreTab extends StatefulWidget {
   final String selectedCategory;
   final ValueChanged<String> onCategorySelected;
   final List<String> categories;
+  final bool showLoginGreeting;
+  final String? userName;
 
   const ExploreTab({
     super.key,
@@ -21,6 +23,8 @@ class ExploreTab extends StatefulWidget {
     required this.selectedCategory,
     required this.onCategorySelected,
     required this.categories,
+    this.showLoginGreeting = false,
+    this.userName,
   });
 
   @override
@@ -153,6 +157,7 @@ class _ExploreTabState extends State<ExploreTab> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildHeader(),
+                    if (widget.showLoginGreeting) _buildLoginGreeting(),
                     _buildSearchBar(),
                     const SizedBox(height: AppSpacing.sm),
                     CategoryFilter(
@@ -491,6 +496,45 @@ class _ExploreTabState extends State<ExploreTab> {
             style: AppTextStyles.displayMedium.copyWith(color: Colors.white),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLoginGreeting() {
+    final name = widget.userName?.trim();
+    final greeting = name == null || name.isEmpty
+        ? AppLocalizations.get('login_greeting')
+        : AppLocalizations.get(
+            'login_greeting_named',
+          ).replaceAll('{name}', name);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+          ),
+          child: Text(
+            greeting,
+            style: AppTextStyles.headlineSmall.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }

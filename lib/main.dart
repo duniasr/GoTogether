@@ -11,6 +11,7 @@ import 'screens/home_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/admin_verification_screen.dart';
 import 'services/notification_service.dart';
+import 'services/login_greeting_service.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -46,9 +47,7 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          routes: {
-            '/profile': (context) => const ProfileScreen(),
-          },
+          routes: {'/profile': (context) => const ProfileScreen()},
           home: const AppRoot(),
         );
       },
@@ -77,7 +76,10 @@ class AppRoot extends StatelessWidget {
         final uid = snapshot.data!.uid;
 
         return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .snapshots(),
           builder: (context, userSnapshot) {
             if (userSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -87,12 +89,15 @@ class AppRoot extends StatelessWidget {
 
             if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
               return const Scaffold(
-                body: Center(child: Text('No se encontró el perfil del usuario.')),
+                body: Center(
+                  child: Text('No se encontró el perfil del usuario.'),
+                ),
               );
             }
 
             final data = userSnapshot.data!.data() ?? {};
             final rol = data['rol'] as String? ?? 'usuario';
+            final userName = data['nombre'] as String?;
 
             NotificationService().startListening();
 
@@ -100,7 +105,10 @@ class AppRoot extends StatelessWidget {
               return AdminVerificationScreen();
             }
 
-            return HomeScreen();
+            return HomeScreen(
+              showLoginGreeting: LoginGreetingService.consume(uid),
+              userName: userName,
+            );
           },
         );
       },

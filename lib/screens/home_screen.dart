@@ -11,7 +11,10 @@ import '../models/aviso_modificacion.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool showLoginGreeting;
+  final String? userName;
+
+  const HomeScreen({super.key, this.showLoginGreeting = false, this.userName});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -24,11 +27,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final QuedadasService _service = QuedadasService();
   StreamSubscription<List<AvisoModificacion>>? _avisosSub;
   bool _hasShownModificationsPopup = false;
+  bool _showLoginGreeting = false;
   int _misPlanesInitialTab = 0;
 
   @override
   void initState() {
     super.initState();
+    _showLoginGreeting = widget.showLoginGreeting;
     _avisosSub = _service.escucharMisAvisos().listen((avisos) {
       if (avisos.isNotEmpty && !_hasShownModificationsPopup) {
         _hasShownModificationsPopup = true;
@@ -51,17 +56,23 @@ class _HomeScreenState extends State<HomeScreen> {
     final camposSet = avisos.expand((a) => a.campos).toSet();
     final translatedCamposList = camposSet.map((c) {
       if (c == 'fecha') return AppLocalizations.get('date').toLowerCase();
-      if (c == 'ubicacion') return AppLocalizations.get('location').toLowerCase();
+      if (c == 'ubicacion')
+        return AppLocalizations.get('location').toLowerCase();
       return c;
     }).toList();
 
     String fieldsStr;
     if (translatedCamposList.length > 1) {
       final last = translatedCamposList.removeLast();
-      final conjunction = AppLocalizations.localeNotifier.value.languageCode == 'es' ? 'y' : 'and';
+      final conjunction =
+          AppLocalizations.localeNotifier.value.languageCode == 'es'
+          ? 'y'
+          : 'and';
       fieldsStr = '${translatedCamposList.join(", ")} $conjunction $last';
     } else {
-      fieldsStr = translatedCamposList.isNotEmpty ? translatedCamposList.first : '';
+      fieldsStr = translatedCamposList.isNotEmpty
+          ? translatedCamposList.first
+          : '';
     }
 
     showDialog(
@@ -71,7 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 400),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xl),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xl,
+          ),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -135,7 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Text(
                         AppLocalizations.get('view_in_my_plans'),
-                        style: AppTextStyles.button.copyWith(color: Colors.white),
+                        style: AppTextStyles.button.copyWith(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -144,7 +160,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     onPressed: () => Navigator.of(ctx).pop(),
                     child: Text(
                       AppLocalizations.get('got_it'),
-                      style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
                 ],
@@ -185,6 +203,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onCategorySelected: (cat) =>
                     setState(() => _selectedCategory = cat),
                 categories: _categories,
+                showLoginGreeting: _showLoginGreeting,
+                userName: widget.userName,
               )
             : _currentIndex == 1
             ? MapScreen()
@@ -249,6 +269,9 @@ class _HomeScreenState extends State<HomeScreen> {
             return;
           }
           setState(() {
+            if (_currentIndex == 0 && index != 0) {
+              _showLoginGreeting = false;
+            }
             _currentIndex = index;
             if (index != 3) _misPlanesInitialTab = 0;
           });
