@@ -58,6 +58,7 @@ class _QuedadasPageState extends State<QuedadasPage> {
     bool esVerificado = false;
     DateTime fechaInicio = DateTime.now().add(const Duration(hours: 1));
     DateTime fechaFin = DateTime.now().add(const Duration(hours: 3));
+    String idiomaSeleccionado = 'Any';
 
     await showDialog<void>(
       context: context,
@@ -143,6 +144,31 @@ class _QuedadasPageState extends State<QuedadasPage> {
 
                         setStateDialog(() {
                           estadoSeleccionado = value;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: idiomaSeleccionado,
+                      decoration: const InputDecoration(
+                        labelText: 'Idioma',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: ['Any', 'es', 'en', 'de']
+                          .map(
+                            (idioma) => DropdownMenuItem<String>(
+                              value: idioma,
+                              child: Text(idioma == 'Any' ? 'Cualquiera' : (idioma == 'es' ? 'Español' : (idioma == 'en' ? 'Inglés' : 'Alemán'))),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value == null) {
+                          return;
+                        }
+
+                        setStateDialog(() {
+                          idiomaSeleccionado = value;
                         });
                       },
                     ),
@@ -293,6 +319,7 @@ class _QuedadasPageState extends State<QuedadasPage> {
                         esVerificado: esVerificado,
                         fechaInicio: fechaInicio,
                         fechaFin: fechaFin,
+                        idioma: idiomaSeleccionado,
                       );
 
                       if (!context.mounted) {

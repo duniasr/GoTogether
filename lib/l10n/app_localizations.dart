@@ -638,7 +638,6 @@ class AppLocalizations {
       'dismiss_reports': 'Verwerfen',
       'no_reported_events': 'Keine gemeldeten Events',
       'dismissed_success': 'Meldungen erfolgreich verworfen',
-    }
       'terms_accepted': 'Ich habe die ',
       'terms_conditions':
           'Allgemeinen Geschäftsbedingungen gelesen und akzeptiere sie',
