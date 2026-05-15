@@ -358,54 +358,60 @@ class QuedadasService {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw Exception('User is not authenticated');
 
-    final doc = await _eventsRef.doc(eventoId).get();
-    if (!doc.exists) return;
-    
-    final quedada = Quedada.fromFirestore(doc);
-    
+    // Leer el evento actual
+    final eventDocRef = _eventsRef.doc(eventoId);
+    final eventSnap = await eventDocRef.get();
+    if (!eventSnap.exists) throw Exception('El evento no existe');
+    final quedada = Quedada.fromFirestore(eventSnap);
+
+    final yaVotoPositivo = quedada.valoracionesPositivas.contains(uid);
+    final yaVotoNegativo = quedada.valoracionesNegativas.contains(uid);
+
+    // Calcular nuevas listas
+    final List<String> nuevasPositivas = List<String>.from(quedada.valoracionesPositivas);
+    final List<String> nuevasNegativas = List<String>.from(quedada.valoracionesNegativas);
     int incrementoReputacion = 0;
-    
-    bool estabaPositivo = quedada.valoracionesPositivas.contains(uid);
-    bool estabaNegativo = quedada.valoracionesNegativas.contains(uid);
+
+    final ratingDocRef = eventDocRef.collection('valoraciones').doc(uid);
 
     if (esPositivo) {
-      if (estabaPositivo) {
-        // Quitar voto positivo
+      if (yaVotoPositivo) {
+        nuevasPositivas.remove(uid);
         incrementoReputacion = -1;
-        await _eventsRef.doc(eventoId).update({
-          'valoracionesPositivas': FieldValue.arrayRemove([uid])
-        });
+        await ratingDocRef.delete();
       } else {
-        // Añadir voto positivo
-        incrementoReputacion = estabaNegativo ? 2 : 1; 
-        await _eventsRef.doc(eventoId).update({
-          'valoracionesPositivas': FieldValue.arrayUnion([uid]),
-          if (estabaNegativo) 'valoracionesNegativas': FieldValue.arrayRemove([uid])
-        });
+        if (!nuevasPositivas.contains(uid)) nuevasPositivas.add(uid);
+        nuevasNegativas.remove(uid);
+        incrementoReputacion = yaVotoNegativo ? 2 : 1;
+        await ratingDocRef.set({'userId': uid, 'esPositivo': true, 'eventoId': eventoId});
       }
     } else {
-      if (estabaNegativo) {
-        // Quitar voto negativo
+      if (yaVotoNegativo) {
+        nuevasNegativas.remove(uid);
         incrementoReputacion = 1;
-        await _eventsRef.doc(eventoId).update({
-          'valoracionesNegativas': FieldValue.arrayRemove([uid])
-        });
+        await ratingDocRef.delete();
       } else {
-        // Añadir voto negativo
-        incrementoReputacion = estabaPositivo ? -2 : -1;
-        await _eventsRef.doc(eventoId).update({
-          'valoracionesNegativas': FieldValue.arrayUnion([uid]),
-          if (estabaPositivo) 'valoracionesPositivas': FieldValue.arrayRemove([uid])
-        });
+        if (!nuevasNegativas.contains(uid)) nuevasNegativas.add(uid);
+        nuevasPositivas.remove(uid);
+        incrementoReputacion = yaVotoPositivo ? -2 : -1;
+        await ratingDocRef.set({'userId': uid, 'esPositivo': false, 'eventoId': eventoId});
       }
     }
 
-    if (incrementoReputacion != 0) {
-      final userDoc = _firestore.collection('users').doc(organizadorId);
-      // Para asegurar que el campo reputacion se crea si no existía (ej. usuarios antiguos)
-      await userDoc.set({
-        'reputacion': FieldValue.increment(incrementoReputacion)
-      }, SetOptions(merge: true));
+    // Actualizar el documento del evento
+    await eventDocRef.update({
+      'valoracionesPositivas': nuevasPositivas,
+      'valoracionesNegativas': nuevasNegativas,
+    });
+
+    // Actualizar la reputación del organizador
+    if (incrementoReputacion != 0 && organizadorId.isNotEmpty) {
+      final userDocRef = _firestore.collection('users').doc(organizadorId);
+      final userSnap = await userDocRef.get();
+      final currentRep = userSnap.exists
+          ? ((userSnap.data() as Map<String, dynamic>?)?['reputacion'] as num?)?.toInt() ?? 0
+          : 0;
+      await userDocRef.set({'reputacion': currentRep + incrementoReputacion}, SetOptions(merge: true));
     }
   }
 
