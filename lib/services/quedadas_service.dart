@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import '../models/quedada.dart';
+import '../models/aviso_modificacion.dart';
 
 class QuedadasService {
   QuedadasService({FirebaseFirestore? firestore, FirebaseAuth? auth})
@@ -205,6 +206,42 @@ class QuedadasService {
           'The plan "${currentQuedada.titulo}" ($fecha) has been cancelled.',
         );
       }
+
+      // HU-08.4: Track modifications to critical fields
+      List<String> camposModificados = [];
+      if (fechaInicio != null && !fechaInicio.isAtSameMomentAs(currentQuedada.fechaInicio)) {
+        camposModificados.add('fecha');
+      }
+      if (fechaFin != null && !fechaFin.isAtSameMomentAs(currentQuedada.fechaFin)) {
+        if (!camposModificados.contains('fecha')) camposModificados.add('fecha');
+      }
+      if (latitud != null && longitud != null && 
+          (latitud != currentQuedada.ubicacion.latitude || longitud != currentQuedada.ubicacion.longitude)) {
+        camposModificados.add('ubicacion');
+      }
+
+      if (camposModificados.isNotEmpty && currentQuedada.asistentesID.isNotEmpty) {
+        // Enviar notificación de sistema (push notification trigger)
+        await _enviarNotificacionAAsistentes(
+          currentQuedada,
+          'El plan "${currentQuedada.titulo}" ha sido modificado. Por favor, revisa los nuevos detalles.',
+        );
+
+        final batch = _firestore.batch();
+        for (var uid in currentQuedada.asistentesID) {
+          final docId = '${eventoId}_$uid';
+          final docRef = _firestore.collection('avisos_modificaciones').doc(docId);
+          batch.set(docRef, {
+            'userId': uid,
+            'eventoId': eventoId,
+            'tituloEvento': currentQuedada.titulo,
+            'campos': FieldValue.arrayUnion(camposModificados),
+            'leido': false,
+            'fecha': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        }
+        await batch.commit();
+      }
     }
 
     await _eventsRef.doc(eventoId).update({
@@ -286,6 +323,35 @@ class QuedadasService {
       'contadorReportes': FieldValue.increment(1),
     });
 
+  }
+
+  Stream<List<AvisoModificacion>> escucharMisAvisos() {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return Stream.value([]);
+    
+    return _firestore.collection('avisos_modificaciones')
+        .where('userId', isEqualTo: usuario.uid)
+        .snapshots()
+        .map((snap) => snap.docs.map(AvisoModificacion.fromFirestore).toList());
+  }
+
+  Stream<AvisoModificacion?> escucharAvisoQuedada(String eventoId) {
+    final usuario = _auth.currentUser;
+    if (usuario == null) return Stream.value(null);
+    
+    final docId = '${eventoId}_${usuario.uid}';
+    return _firestore.collection('avisos_modificaciones')
+        .doc(docId)
+        .snapshots()
+        .map((snap) => snap.exists ? AvisoModificacion.fromFirestore(snap) : null);
+  }
+
+  Future<void> marcarAvisoLeido(String eventoId) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    
+    final docId = '${eventoId}_$uid';
+    await _firestore.collection('avisos_modificaciones').doc(docId).delete();
   }
 
   Future<void> valorarOrganizador(String eventoId, String organizadorId, bool esPositivo) async {
