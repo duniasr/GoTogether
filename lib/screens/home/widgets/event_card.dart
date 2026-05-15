@@ -362,10 +362,10 @@ class EventCard extends StatelessWidget {
                       builder: (context, snapshot) {
                         if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox();
                         final reputacion = (snapshot.data!.data() as Map<String, dynamic>?)?['reputacion'] ?? 0;
-                        String nivel = 'Novato';
+                        String nivel = AppLocalizations.get('beginner') ?? 'Novato';
                         Color color = Colors.grey;
-                        if (reputacion >= 7) { nivel = 'Experto'; color = Colors.purple; }
-                        else if (reputacion >= 3) { nivel = 'Avanzado'; color = Colors.blue; }
+                        if (reputacion >= 7) { nivel = AppLocalizations.get('expert') ?? 'Experto'; color = Colors.purple; }
+                        else if (reputacion >= 3) { nivel = AppLocalizations.get('advanced') ?? 'Avanzado'; color = Colors.blue; }
                         
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -474,14 +474,14 @@ class EventCard extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const Text(
-                    '¡El evento ha finalizado!',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                  Text(
+                    AppLocalizations.get('event_finished') ?? '¡El evento ha finalizado!',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    '¿Qué te ha parecido la organización?',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  Text(
+                    AppLocalizations.get('rate_organization') ?? '¿Qué te ha parecido la organización?',
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -517,11 +517,11 @@ class EventCard extends StatelessWidget {
               children: [
                 const Icon(Icons.thumb_up, color: Colors.green, size: 16),
                 const SizedBox(width: 6),
-                Text('${quedada.valoracionesPositivas.length} Me gusta', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text('${quedada.valoracionesPositivas.length} ${AppLocalizations.get('likes') ?? 'Me gusta'}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(width: 24),
                 const Icon(Icons.thumb_down, color: Colors.red, size: 16),
                 const SizedBox(width: 6),
-                Text('${quedada.valoracionesNegativas.length} No me gusta', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
+                Text('${quedada.valoracionesNegativas.length} ${AppLocalizations.get('dislikes') ?? 'No me gusta'}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13)),
               ],
             ),
           ],

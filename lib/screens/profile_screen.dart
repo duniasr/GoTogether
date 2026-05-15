@@ -733,10 +733,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 Builder(builder: (context) {
-                  String nivel = 'Novato';
+                  String nivel = AppLocalizations.get('beginner') ?? 'Novato';
                   Color color = Colors.grey;
-                  if (_reputacion >= 7) { nivel = 'Experto'; color = Colors.purple; }
-                  else if (_reputacion >= 3) { nivel = 'Avanzado'; color = Colors.blue; }
+                  if (_reputacion >= 7) { nivel = AppLocalizations.get('expert') ?? 'Experto'; color = Colors.purple; }
+                  else if (_reputacion >= 3) { nivel = AppLocalizations.get('advanced') ?? 'Avanzado'; color = Colors.blue; }
                   
                   return Container(
                     margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -754,7 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Icon(Icons.star_rounded, color: color),
                             const SizedBox(width: 8),
                             Text(
-                              'Nivel: $nivel',
+                              '${AppLocalizations.get('level') ?? 'Nivel'}: $nivel',
                               style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
                             ),
                           ],
